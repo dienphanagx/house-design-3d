@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nhà cấp 4 7×13 m – bố trí mới có nội thất</title>
+<style>
+:root{--bg:#EEF1F2;--pn:#FFFFFFE6;--ink:#22303A;--ln:#B9C4CA;--ac:#1F6F6B;--acx:#FFFFFF;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181D;--pn:#1B262CE6;--ink:#E6ECEF;--ln:#3A4A53;--ac:#6CC4BD;--acx:#0E1A1C}}
+:root[data-theme="dark"]{--bg:#10181D;--pn:#1B262CE6;--ink:#E6ECEF;--ln:#3A4A53;--ac:#6CC4BD;--acx:#0E1A1C}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:14px}
+#app{position:relative;height:100%;overflow:hidden}
+#v{position:absolute;inset:0;touch-action:none}
+canvas{display:block}
+.bar{position:absolute;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.bar>*{pointer-events:auto}
+#top{top:8px}
+#rooms{top:56px}
+button{font:inherit;color:var(--ink);background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:8px 12px;min-height:40px;cursor:pointer}
+button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+#hint{position:absolute;left:8px;right:8px;bottom:8px;padding:8px 12px;background:var(--pn);border:1px solid var(--ln);border-radius:8px;font-size:12px;line-height:1.4}
+#pad{position:absolute;right:10px;bottom:70px;display:none;grid-template-columns:repeat(3,48px);gap:6px}
+#pad button{padding:0;min-height:48px;font-size:18px}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="v"></div>
+<div class="bar" id="top">
+<button id="m-out">Nhìn ngoài (có mái)</button>
+<button id="m-cut">Mở mái – nhìn từ trên</button>
+<button id="m-walk">Đi bên trong</button>
+</div>
+<div class="bar" id="rooms"></div>
+<div id="pad"><span></span><button data-k="w" aria-label="Tiến">▲</button><span></span><button data-k="l" aria-label="Quay trái">◀</button><button data-k="s" aria-label="Lùi">▼</button><button data-k="r" aria-label="Quay phải">▶</button></div>
+<div id="hint"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+var T=THREE,TN=Math.tan(Math.PI/12);
+var host=document.getElementById('v'),hint=document.getElementById('hint');
+var scene=new T.Scene();scene.background=new T.Color(0xcfe3f0);
+var cam=new T.PerspectiveCamera(60,1,0.05,120);cam.rotation.order='YXZ';
+var ren=new T.WebGLRenderer({antialias:true});host.appendChild(ren.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x8a9aa6,0.9));
+var sun=new T.DirectionalLight(0xffffff,0.55);sun.position.set(-6,14,-20);scene.add(sun);
+var oc=new T.OrbitControls(cam,ren.domElement);oc.enableDamping=true;
+function mt(c,o){return new T.MeshLambertMaterial(o?{color:c,transparent:true,opacity:o}:{color:c});}
+var mWall=mt(0xeeebe4),mFl=mt(0x969896),mCeil=mt(0xf6f6f3),mRoof=mt(0x546878),mGlass=mt(0x96c8de,0.4),mDoor=mt(0x8c603e);
+function box(x0,Y0,x1,Y1,z0,z1,m,g){var b=new T.Mesh(new T.BoxGeometry(x1-x0,z1-z0,Y1-Y0),m);b.position.set((x0+x1)/2,(z0+z1)/2,-(Y0+Y1)/2);(g||scene).add(b);return b;}
+var shell=new T.Group();scene.add(shell);
+var solids=[];
+box(0,-1,7,13,-0.05,0,mt(0xa8b694));
+box(0.2,12.1,6.8,13,0,0.02,mt(0xc4c4be));
+box(0.2,0,6.8,12.1,0,0.3,mFl);
+// Bố trí mới (từ cửa vào): [chỗ để xe + cửa vào | phòng ngủ 1] -> phòng khách rộng giữa nhà -> [bếp | khu ăn] -> [WC | phòng ngủ 2]
+// Khu ăn ngay sau phòng khách (thông bằng lối mở rộng), bếp cạnh khu ăn, WC đối diện bếp, phòng ngủ 2 đối diện khu ăn
+var RM=[['xe','Chỗ để xe + cửa vào',0.4,9.4,3.4,11.9,0xe6e6e1],['ngu1','Phòng ngủ 1',3.5,8.7,6.6,11.9,0xced6ee,0,0.302],['khach','Phòng khách',0.4,5.8,6.6,9.3,0xcde0e8,0,0.3,19.8],['an','Bếp + khu ăn',0.4,2.7,6.6,5.7,0xf0e2be],['wc','Nhà vệ sinh',5.1,0.2,6.6,2.6,0xbee8dc],['ngu2','Phòng ngủ 2',0.4,0.2,3.9,2.6,0xced6ee]];
+var wrap=document.getElementById('rooms');
+RM.forEach(function(r){
+  var zf=r[8]||r[7]||0.3;box(r[2],r[3],r[4],r[5],zf,zf+0.01,mt(r[6]));
+  var w=r[4]-r[2],d=r[5]-r[3],a=(r[9]||w*d).toFixed(1).replace('.',',');
+  var c=document.createElement('canvas');c.width=512;c.height=256;var x=c.getContext('2d');
+  x.fillStyle='rgba(34,48,58,0.85)';x.textAlign='center';x.font='bold '+(r[1].length>14?40:54)+'px Arial';x.fillText(r[1],256,100);
+  x.font='44px Arial';x.fillText(w.toFixed(1).replace('.',',')+' × '+d.toFixed(1).replace('.',',')+' m',256,160);x.fillText(a+' m²',256,214);
+  var tx=new T.CanvasTexture(c);
+  var p=new T.Mesh(new T.PlaneGeometry(Math.min(w*0.9,2.4),Math.min(w*0.9,2.4)/2),new T.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false}));
+  p.rotation.x=-Math.PI/2;p.position.set((r[2]+r[4])/2,zf+0.03,-(r[3]+r[5])/2);scene.add(p);
+  var b=document.createElement('button');b.textContent=r[1];b.onclick=function(){walkTo(r);};if(!r[7])wrap.appendChild(b);
+});
+var WL=[
+[3.4,11.9,6.8,12.1,[],[[1.05,2.25]]],
+[0.2,0,6.8,0.2,[[3.85,4.75]],[[1.35,2.55]]],
+[0.2,0.2,0.4,11.9,[],[[6.8,8.0]]],
+[6.6,0.2,6.8,11.9,[],[[0.8,1.6,1.5,2.1],[3.1,4.9],[6.5,8.3]]],
+[0.4,9.3,3.4,9.4,[[0,3.0,2.7]],[]],
+[3.5,8.6,6.6,8.7,[[0.3,1.1]],[]],
+[0.4,2.6,6.6,2.7,[[3.6,4.6]],[]],
+[3.4,8.6,3.5,11.9,[],[]],
+[3.9,0.2,4.0,2.6,[[1.5,2.3]],[]],
+[5.0,0.2,5.1,2.6,[[1.5,2.3]],[]]];
+var ZB=0.3,ZT=3.6;
+WL.forEach(function(w){
+  var h=(w[2]-w[0])>(w[3]-w[1]),L=h?w[2]-w[0]:w[3]-w[1];
+  var op=w[4].map(function(o){return {a:o[0],b:o[1],z0:0,z1:(o[2]!==undefined?o[2]:2.1)};}).concat(w[5].map(function(o){return {a:o[0],b:o[1],z0:(o[2]!==undefined?o[2]:1.0),z1:(o[3]!==undefined?o[3]:2.1),g:1};})).sort(function(p,q){return p.a-q.a;});
+  function seg(s0,s1,z0,z1,m,sol){if(s1-s0<0.001)return;
+    var bx=h?[w[0]+s0,w[1],w[0]+s1,w[3]]:[w[0],w[1]+s0,w[2],w[1]+s1];
+    box(bx[0],bx[1],bx[2],bx[3],ZB+z0,ZB+z1,m);
+    if(sol&&ZB+z0<1.7)solids.push([bx[0],bx[1],bx[2],bx[3]]);}
+  var cur=0;
+  op.forEach(function(o){seg(cur,o.a,0,ZT-ZB,mWall,1);
+    seg(o.a,o.b,o.z1,ZT-ZB,mWall,0);
+    if(o.g){seg(o.a,o.b,0,o.z0,mWall,1);
+      var t=h?[w[0]+o.a,w[1]+(w[3]-w[1])*0.45,w[0]+o.b,w[1]+(w[3]-w[1])*0.55]:[w[0]+(w[2]-w[0])*0.45,w[1]+o.a,w[0]+(w[2]-w[0])*0.55,w[1]+o.b];
+      box(t[0],t[1],t[2],t[3],ZB+o.z0,ZB+o.z1,mGlass);}
+    cur=o.b;});
+  seg(cur,L,0,ZT-ZB,mWall,1);
+});
+// cửa chính hết cỡ: 3,0 m × 2,7 m, kính 3 cánh (cửa lùa) từ tường trái đến vách phòng ngủ 1
+box(0.4,9.33,3.4,9.37,ZB,ZB+2.7,mGlass);box(0.4,9.31,3.4,9.39,ZB+2.65,ZB+2.7,mDoor);box(0.4,9.31,0.46,9.39,ZB,ZB+2.7,mDoor);box(3.34,9.31,3.4,9.39,ZB,ZB+2.7,mDoor);box(1.37,9.31,1.43,9.39,ZB,ZB+2.7,mDoor);box(2.37,9.31,2.43,9.39,ZB,ZB+2.7,mDoor);
+var FM={};
+function F(x0,y0,x1,y1,h,c,z){z=z||0;if(!FM[c])FM[c]=mt(c);return box(x0,y0,x1,y1,ZB+z,ZB+z+h,FM[c]);}
+// cửa sau (hành lang giữa WC và phòng ngủ 2) + bậc thềm
+box(4.05,0.08,4.95,0.12,ZB,ZB+2.1,mDoor);box(4.15,0.06,4.85,0.14,ZB+0.9,ZB+1.8,mGlass);box(3.95,-0.45,5.05,0,0,0.15,mFl);
+// chỗ để xe: 2 xe máy
+[0.7,1.25].forEach(function(x){
+  F(x-0.25,9.95,x+0.25,10.8,0.45,0x2f3a44,0.25);
+  F(x-0.22,10.3,x+0.22,10.75,0.12,0x1a1a1a,0.7);
+  F(x-0.06,9.6,x+0.06,10.2,0.55,0x111111,0);
+  F(x-0.06,10.8,x+0.06,11.4,0.55,0x111111,0);
+  F(x-0.35,9.9,x+0.35,9.98,0.06,0x333333,0.9);
+});
+// phòng khách: sofa chữ U gọn (2 hàng ghế dọc 2 bên + sofa đáy) quay vào tivi, trải thảm; lối đi rộng 0,9 m từ cửa chính xuống khu ăn nằm bên phải bộ sofa
+F(0.4,8.65,0.85,9.25,1.0,0xb89a74,0);
+F(0.4,6.8,2.55,8.6,0.01,0xe6dfd0,0.02);
+F(0.4,7.85,2.5,8.55,0.4,0x4f6d7a,0);F(0.4,8.35,2.5,8.55,0.45,0x4f6d7a,0.4);
+F(0.4,6.9,1.1,7.85,0.4,0x4f6d7a,0);F(0.4,6.9,0.55,7.85,0.45,0x4f6d7a,0.4);
+F(1.8,6.9,2.5,7.85,0.4,0x4f6d7a,0);F(2.35,6.9,2.5,7.85,0.45,0x4f6d7a,0.4);
+F(1.2,7.1,1.7,7.6,0.4,0x8a6b4f,0);
+// phòng khách, bên phải lối đi: góc làm việc/đọc sách dưới cửa sổ + tủ trang trí cạnh cửa phòng ngủ 1 + chậu cây
+F(6.0,6.9,6.6,8.1,0.04,0x8a6b4f,0.72);
+[[6.0,6.9],[6.54,6.9],[6.0,8.04],[6.54,8.04]].forEach(function(p){F(p[0],p[1],p[0]+0.06,p[1]+0.06,0.72,0x6b5039,0);});
+F(6.25,7.2,6.55,7.6,0.02,0x2a2a2a,0.76);
+F(5.45,7.2,5.85,7.6,0.45,0xb89a74,0);F(5.4,7.2,5.45,7.6,0.45,0xb89a74,0.45);
+F(4.7,8.2,6.5,8.6,0.8,0xb89a74,0);F(4.7,8.2,6.5,8.6,0.04,0x9a7650,0.8);
+F(6.2,6.2,6.55,6.55,0.35,0x8a6b4f,0);F(6.25,6.25,6.5,6.5,0.7,0x4f8a4f,0.35);
+// phòng ngủ 1 (3,1 × 3,2 m ≈ 9,9 m²): giường 1,6 × 2,0 m có 2 táp đầu giường, tủ áo dài 2,2 m
+F(4.6,9.8,6.6,11.4,0.3,0x8a6b4f,0);
+F(4.65,9.85,6.55,11.35,0.18,0xf2f2f2,0.3);
+F(6.0,9.9,6.5,10.5,0.1,0xffffff,0.48);F(6.0,10.7,6.5,11.3,0.1,0xffffff,0.48);
+F(6.1,9.3,6.6,9.75,0.45,0x8a6b4f,0);F(6.1,11.45,6.6,11.9,0.45,0x8a6b4f,0);
+F(3.5,9.7,4.1,11.9,2.0,0xb89a74,0);
+// phòng ngủ 2 (3,5 × 2,4 m ≈ 8,4 m²): giường 1,4 × 2,0 m, tủ áo 1,35 m sát vách hành lang
+F(0.4,0.7,2.4,2.1,0.3,0x8a6b4f,0);
+F(0.45,0.75,2.4,2.05,0.18,0xf2f2f2,0.3);
+F(0.5,0.8,1.0,1.35,0.1,0xffffff,0.48);F(0.5,1.45,1.0,2.0,0.1,0xffffff,0.48);
+F(0.4,0.2,0.85,0.65,0.45,0x8a6b4f,0);
+F(3.3,0.3,3.9,1.65,2.0,0xb89a74,0);
+// bếp: dãy chính dọc vách phòng ngủ 2 (tủ cao - bếp - chậu rửa), dãy dọc tường trái + tủ lạnh + tủ cao lấp kín đến kệ tivi
+F(0.4,2.7,1.0,3.3,2.0,0xb89a74,0);
+F(1.0,2.7,3.9,3.3,0.9,0xe8e2d6,0);F(1.0,2.7,3.9,3.3,0.04,0x555b5f,0.9);
+F(1.35,2.8,1.85,3.2,0.02,0x2a2a2a,0.94);
+F(1.0,2.7,1.35,3.1,0.7,0xd8cfc0,1.4);F(1.35,2.7,1.85,3.1,0.35,0xcfd4d8,1.45);F(1.85,2.7,3.9,3.1,0.7,0xd8cfc0,1.4);
+F(2.5,2.8,3.2,3.2,0.02,0x9aa7ad,0.94);
+F(0.4,3.3,1.0,4.7,0.9,0xe8e2d6,0);F(0.4,3.3,1.0,4.7,0.04,0x555b5f,0.9);
+F(0.4,3.3,0.8,4.7,0.7,0xd8cfc0,1.4);
+F(0.4,4.7,1.0,5.3,1.7,0xcfd4d8,0);F(0.4,4.7,1.0,5.3,0.4,0xd8cfc0,1.7);
+F(0.4,5.3,1.0,5.8,2.3,0xb89a74,0);
+// khu ăn: 1 bàn 2,0 × 0,8 m xoay ngang, đặt chính giữa khoảng trống giữa bếp và kệ, dịch về phía dãy bếp
+F(1.5,4.15,3.5,4.95,0.05,0x8a6b4f,0.7);
+[[1.55,4.2],[3.32,4.2],[1.55,4.82],[3.32,4.82]].forEach(function(p){F(p[0],p[1],p[0]+0.08,p[1]+0.08,0.7,0x6b5039,0);});
+[1.65,2.3,2.95].forEach(function(x){
+  F(x,3.85,x+0.4,4.25,0.45,0xb89a74,0);F(x,3.8,x+0.4,3.85,0.45,0xb89a74,0.45);
+  F(x,4.85,x+0.4,5.25,0.45,0xb89a74,0);F(x,5.25,x+0.4,5.3,0.45,0xb89a74,0.45);
+});
+// góc giặt + tủ phụ (bên phải khu bếp ăn, sát vách nhà vệ sinh nên chung vách nước)
+F(5.15,2.7,5.75,3.3,0.85,0xf0f0f0,0);F(5.28,3.27,5.62,3.31,0.34,0x2a3a44,0.3);
+F(5.15,2.7,5.75,3.0,0.5,0xd8cfc0,1.5);
+F(5.8,2.7,6.5,3.3,2.0,0xd8cfc0,0);
+F(6.2,3.5,6.6,4.9,0.85,0xb89a74,0);F(6.2,3.5,6.6,4.9,0.04,0x9a7650,0.85);
+// kệ gỗ có tivi (tivi thẳng tim sofa): dài 3,0 m, sâu 0,4 m, cao 2,3 m
+(function(){var x0=0.4,x1=3.4,y0=5.8,y1=6.2,wd=0x9a7650;
+F(x0,y0,x1,y1,0.9,0xb89a74,0);F(x0,y0,x1,y1,0.05,wd,0.9);
+[x0,1.0,1.9,x1-0.04].forEach(function(x){F(x,y0,x+0.04,y1,1.35,wd,0.95);});
+[1.3,1.7].forEach(function(z){F(x0,y0,1.0,y1,0.04,wd,z);F(1.94,y0,x1,y1,0.04,wd,z);});F(x0,y0,x1,y1,0.04,wd,2.26);
+F(1.05,6.1,1.89,6.16,0.58,0x111111,0.98);F(1.35,6.0,1.55,6.1,0.04,0x333333,0.95);
+F(0.5,5.9,0.9,6.1,0.28,0x6b8f71,0.95);F(0.5,5.9,0.9,6.1,0.22,0xc9a77a,1.34);F(0.5,5.9,0.9,6.1,0.26,0x7a8ea0,1.74);
+F(2.1,5.9,2.5,6.1,0.28,0xd9c7a3,0.95);F(2.9,5.9,3.3,6.1,0.28,0x7a8ea0,0.95);F(2.1,5.9,2.5,6.1,0.22,0x6b8f71,1.34);F(2.9,5.9,3.3,6.1,0.26,0xc9a77a,1.74);F(2.45,5.9,2.75,6.1,0.2,0xd9c7a3,1.74);
+})();
+// nhà vệ sinh (1,5 × 2,4 m): vòi sen sau cùng, bồn cầu sát tường phải dưới cửa sổ thông gió, bồn rửa gần cửa
+F(5.15,0.2,6.55,1.1,0.05,0xd8dfe3,0);
+F(6.35,1.3,6.6,1.85,0.8,0xffffff,0);F(5.9,1.3,6.35,1.85,0.4,0xffffff,0);
+F(6.1,2.05,6.55,2.55,0.85,0xe8e2d6,0);
+// trần + mái
+box(0.2,0,6.8,12.1,ZT,3.65,mCeil,shell);
+function slab(cx,rot,sx){var m=new T.Mesh(new T.BoxGeometry(3.571,0.06,12.9),mRoof);
+  var zc=3.65+(Math.abs(cx-(sx?6.8:0.2)))*TN;
+  m.position.set(cx+(sx?0.03:-0.03)*Math.sin(Math.PI/12),zc+0.03*Math.cos(Math.PI/12),-6.15);m.rotation.z=rot;shell.add(m);}
+slab(1.775,Math.PI/12,0);slab(5.225,-Math.PI/12,1);
+function gable(zp){var s=new T.Shape();s.moveTo(0.2,3.65);s.lineTo(6.8,3.65);s.lineTo(3.5,3.65+3.3*TN);s.closePath();
+  var g=new T.Mesh(new T.ExtrudeGeometry(s,{depth:0.2,bevelEnabled:false}),mWall);g.position.z=zp;shell.add(g);}
+gable(-12.1);gable(-0.2);
+var mode='',yaw=0,pitch=0,keys={};
+var B={out:document.getElementById('m-out'),cut:document.getElementById('m-cut'),walk:document.getElementById('m-walk')};
+function setBtn(){for(var k in B)B[k].className=(k===mode)?'on':'';}
+function pad(){document.getElementById('pad').style.display=matchMedia('(pointer:coarse)').matches?'grid':'none';}
+function orbit(m,p,t,roof){mode=m;oc.enabled=true;shell.visible=roof;cam.position.set(p[0],p[1],p[2]);oc.target.set(t[0],t[1],t[2]);cam.fov=45;cam.updateProjectionMatrix();oc.update();
+  document.getElementById('pad').style.display='none';setBtn();
+  hint.textContent=(roof?'Xem ngoài: kéo để xoay, cuộn hoặc chụm tay để phóng to.':'Đã mở mái và trần: kéo để xoay, phóng to để nhìn từng phòng.')+' Mặt bằng 7 × 13 m, không tính sân phơi. Thiết kế sơ bộ, kích thước thông thủy (trong tường).';}
+function walkTo(r){mode='walk';oc.enabled=false;shell.visible=true;cam.fov=70;cam.updateProjectionMatrix();
+  var cx=r?(r[2]+r[4])/2:4.5,cy=r?(r[3]+r[5])/2:10.2;cam.position.set(cx,1.55,-cy);
+  yaw=(r&&(r[4]-r[2])>(r[5]-r[3]))?-Math.PI/2:0;pitch=-0.05;pad();setBtn();
+  hint.textContent='Đang ở: '+(r?r[1]:'Phòng khách')+'. Kéo chuột/ngón tay để nhìn quanh; W A S D hoặc nút ▲▼ để đi (không xuyên tường); ← → để quay.';}
+function sit(){mode='walk';oc.enabled=false;shell.visible=true;cam.fov=70;cam.updateProjectionMatrix();
+  cam.position.set(2.5,1.2,-3.95);yaw=0;pitch=0;pad();setBtn();
+  hint.textContent='Đang ngồi ở bàn ăn, phía trước là kệ tivi; dãy bếp dài nằm sau lưng, sát phòng ngủ 2. Kéo để nhìn quanh, W A S D để đi.';}
+B.out.onclick=function(){orbit('out',[12,6,-20],[3.5,1.8,-6.5],true);};
+B.cut.onclick=function(){orbit('cut',[9,15,-18],[3.5,0,-6.5],false);};
+B.walk.onclick=function(){walkTo(RM[2]);};
+var sb=document.createElement('button');sb.textContent='Góc ngồi ăn';sb.onclick=sit;wrap.insertBefore(sb,wrap.firstChild);
+var dr=null;
+ren.domElement.addEventListener('pointerdown',function(e){if(mode==='walk')dr=[e.clientX,e.clientY];});
+addEventListener('pointerup',function(){dr=null;});
+addEventListener('pointermove',function(e){if(mode==='walk'&&dr){yaw-=(e.clientX-dr[0])*0.005;pitch=Math.max(-1.2,Math.min(1.2,pitch-(e.clientY-dr[1])*0.005));dr=[e.clientX,e.clientY];}});
+addEventListener('keydown',function(e){keys[e.key.toLowerCase()]=1;});
+addEventListener('keyup',function(e){keys[e.key.toLowerCase()]=0;});
+document.querySelectorAll('#pad button').forEach(function(b){var k=b.dataset.k;
+  b.addEventListener('pointerdown',function(){keys['pad'+k]=1;});['pointerup','pointerleave'].forEach(function(n){b.addEventListener(n,function(){keys['pad'+k]=0;});});});
+function hit(x,Y){for(var i=0;i<solids.length;i++){var s=solids[i];if(x>s[0]-0.22&&x<s[2]+0.22&&Y>s[1]-0.22&&Y<s[3]+0.22)return true;}
+  return x<0.45||x>6.55||Y<0.1||Y>11.85;}
+var last=performance.now();
+function loop(now){requestAnimationFrame(loop);var dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(mode==='walk'){
+    var f=((keys.w||keys.arrowup||keys.padw)?1:0)-((keys.s||keys.arrowdown||keys.pads)?1:0),sd=(keys.d?1:0)-(keys.a?1:0);
+    yaw+=(((keys.arrowleft||keys.q||keys.padl)?1:0)-((keys.arrowright||keys.e||keys.padr)?1:0))*1.6*dt;
+    var sp=1.6*dt,dx=(-Math.sin(yaw)*f+Math.cos(yaw)*sd)*sp,dz=(-Math.cos(yaw)*f-Math.sin(yaw)*sd)*sp;
+    var nx=cam.position.x+dx,nz=cam.position.z+dz;
+    if(!hit(nx,-cam.position.z))cam.position.x=nx;
+    if(!hit(cam.position.x,-nz))cam.position.z=nz;
+    cam.rotation.set(pitch,yaw,0);
+  } else oc.update();
+  ren.render(scene,cam);}
+function size(){var w=host.clientWidth,h=host.clientHeight;ren.setSize(w,h);ren.setPixelRatio(Math.min(devicePixelRatio,2));cam.aspect=w/h;cam.updateProjectionMatrix();}
+addEventListener('resize',size);size();
+orbit('cut',[9,15,-18],[3.5,0,-6.5],false);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
