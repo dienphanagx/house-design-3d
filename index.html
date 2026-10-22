@@ -3714,6 +3714,15 @@ let mode='plan';const W=7.3,L=13,TH=.16,FLOOR=.25,TOP=3.5;
 // Tọa độ bố trí gốc được quy đổi sang bề ngang nhà đã chốt 7,50 m.
 const HOUSE_WIDTH=7.5,LAND_WIDTH=10,X_SCALE=HOUSE_WIDTH/W,OPPOSITE_SIDE_WIDTH=.5,SIDE_WIDTH=LAND_WIDTH-HOUSE_WIDTH-OPPOSITE_SIDE_WIDTH;
 const sx=x=>x*X_SCALE;
+const YARD_LEVEL=-.045,ENTRY_LEVEL=FLOOR+.016,STEP_RISE=(ENTRY_LEVEL-YARD_LEVEL)/2;
+const vehicleRamp={rect:[.30,-2.50,.30+.90/X_SCALE,0],width:.90,length:2.50};
+// Hai bậc đều nhau, mặt bậc sâu 32 cm; dùng chung cho 2D, 3D và nhân vật.
+const entranceSteps=[
+ {id:'front-step-1',rect:[1.205,-.64,3.405,-.32],top:YARD_LEVEL+STEP_RISE},
+ {id:'front-step-2',rect:[1.205,-.32,3.405,0],top:ENTRY_LEVEL},
+ {id:'kitchen-step-1',rect:[-.64/X_SCALE,8.745,-.32/X_SCALE,10.365],top:YARD_LEVEL+STEP_RISE},
+ {id:'kitchen-step-2',rect:[-.32/X_SCALE,8.745,.16,10.365],top:ENTRY_LEVEL}
+];
 // Bảng cửa: mã số, nơi đặt, ngang × cao, bậu tính từ sàn hoàn thiện.
 // Hướng mặt tiền: y=0. Cửa K2/K4/K6 ở tường bên phải x=7.22.
 const openings={
@@ -3833,12 +3842,14 @@ function line(x1,y1,x2,y2,stroke,width=8,p=sv){return node('line',{x1,y1,x2,y2,s
 function text(x,y,label,size=27,weight=650,color='#36514b',p=sv){let el=node('text',{x,y,'text-anchor':'middle','font-size':size,'font-weight':weight,fill:color},p);el.textContent=label;return el;}
 function makePlan(){
  const outside=node('g',{'data-landscape':'side-strip'});
- rect(-SIDE_WIDTH/X_SCALE*100,-60,SIDE_WIDTH/X_SCALE*100,1390,'#d9d4c7',{stroke:'#a8a79c','stroke-width':1},outside);
+ rect(-SIDE_WIDTH/X_SCALE*100,-60,SIDE_WIDTH/X_SCALE*100,1360,'#d9d4c7',{stroke:'#a8a79c','stroke-width':1},outside);
  rect(-SIDE_WIDTH/X_SCALE*100,-60,436+SIDE_WIDTH/X_SCALE*100,60,'#d9d4c7',{},outside);
  text(-SIDE_WIDTH*50/X_SCALE,640,'HÔNG',10,700,'#52675f',outside);
  text(-SIDE_WIDTH*50/X_SCALE,660,fmt(SIDE_WIDTH)+' m',10,600,'#52675f',outside).classList.add('dimension');
- rect(W*100,-60,OPPOSITE_SIDE_WIDTH/X_SCALE*100,1390,'#d9d4c7',{stroke:'#a8a79c','stroke-width':1},outside);
+ rect(W*100,-60,OPPOSITE_SIDE_WIDTH/X_SCALE*100,1360,'#d9d4c7',{stroke:'#a8a79c','stroke-width':1},outside);
  text(W*100+OPPOSITE_SIDE_WIDTH*50/X_SCALE,660,fmt(OPPOSITE_SIDE_WIDTH)+' m',10,600,'#52675f',outside).classList.add('dimension');
+ entranceSteps.forEach(step=>{const [x0,y0,x1,y1]=step.rect;rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,'#ddd9d0',{stroke:'#8d958d','stroke-width':2,'data-stair':step.id});});
+ {const [x0,y0,x1,y1]=vehicleRamp.rect;rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,'#d5d5ce',{stroke:'#8d958d','stroke-width':2,'data-vehicle-ramp':'front'});const middle=(x0+x1)*50;text(middle,-150,'DỐC XE',12,700,'#52675f');line(middle,-125,middle,-35,'#52675f',2);node('path',{d:'M'+(middle-7)+' -48 L'+middle+' -34 L'+(middle+7)+' -48',fill:'none',stroke:'#52675f','stroke-width':2});}
  rect(0,0,730,1300,'#fdfcf9'); // các tường được vẽ riêng để giữ lối hiên mở và mảng kính lớn
  rooms.forEach(r=>{let [x0,y0,x1,y1]=r.rect;let g=node('g',{'data-room':r.id,class:'rm'});rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,r.svg,{},g);});
  // Vách ngăn: khoảng trống là vị trí cửa.
@@ -3955,7 +3966,7 @@ walls.forEach(w=>[['doors','door'],['windows','window']].forEach(([field,type])=
  const t=text(w.axis==='h'?along:w.pos*100+40,w.axis==='h'?w.pos*100+34:along,code+' '+fmt((o[1]-o[0])*(w.axis==='h'?X_SCALE:1))+' × '+fmt(top-bottom)+' m',13,650,'#226f79',dimensionLayer);
  t.setAttribute('paint-order','stroke');t.setAttribute('stroke','#fff');t.setAttribute('stroke-width','4');
 })));
-sv.setAttribute('viewBox',[-SIDE_WIDTH*100-75,-95,LAND_WIDTH*100+130,1510].join(' '));
+sv.setAttribute('viewBox',[-SIDE_WIDTH*100-75,-285,LAND_WIDTH*100+130,1700].join(' '));
 mirrorDrawing(sv,730);updateMirrorDrawings();
 
 const details=document.createElement('div');details.id='wall-dimensions';details.className='dimension';
@@ -4039,17 +4050,28 @@ function furn(x0,y0,x1,y1,height,color,elev=0){const m=block(x0,y0,x1,y1,FLOOR+e
 // Sân, nền, mặt sàn màu phân biệt từng không gian.
 block(-SIDE_WIDTH/X_SCALE,-15,W+OPPOSITE_SIDE_WIDTH/X_SCALE,L+10,-.20,-.13,mat(0x927652)).name='site-ground';block(0,0,W,L,-.05,FLOOR,base).name='house-floor';
 const tileMaterial=new T.MeshStandardMaterial({color:new T.Color(0xd7d2c7).convertSRGBToLinear(),map:surfaceTexture('tile'),roughness:.42,metalness:.02});rooms.forEach(r=>{let [x0,y0,x1,y1]=r.rect;const tile=tileMaterial.clone();tile.map=tileMaterial.map.clone();tile.map.needsUpdate=true;tile.map.repeat.set((x1-x0)/.6,(y1-y0)/.6);block(x0,y0,x1,y1,FLOOR,FLOOR+.016,tile);});
-block(1.0,-1.1,3.45,0,-.13,.05,mat(0xc7c9c5));block(1.1,-.36,3.4,0,.05,.18,mat(0xd9d2c4));
-// Đất ngang 10 m: nhà 7,5 m, hai dải hông 2 m và 0,5 m lát nền, không trồng cây.
-// Mặt lối đi cùng cao độ sàn để nối cửa kính lùa bếp D1.
+// Hai lối hông cùng cao độ sân; chỉ nâng cốt tại bậc cửa.
 const sideGarden=new T.Group();sideGarden.name='side-garden';scene.add(sideGarden);
-block(-SIDE_WIDTH/X_SCALE,-.60,0,13.30,-.13,FLOOR,mat(0xc7c3b7),sideGarden).name='side-path';
-block(W,-.60,W+OPPOSITE_SIDE_WIDTH/X_SCALE,13.30,-.13,FLOOR,mat(0xc7c3b7),sideGarden).name='opposite-side-path';
-block(-.20,8.805,.16,10.305,-.13,FLOOR,mat(0xc7c3b7),sideGarden).name='kitchen-path-connector';
-block(-.30/X_SCALE,-.60,4.36,0,-.13,FLOOR,mat(0xc7c3b7),sideGarden);
+block(-SIDE_WIDTH/X_SCALE,-.60,0,L,-.13,YARD_LEVEL,mat(0xc7c3b7),sideGarden).name='side-path';
+block(W,-.60,W+OPPOSITE_SIDE_WIDTH/X_SCALE,L,-.13,YARD_LEVEL,mat(0xc7c3b7),sideGarden).name='opposite-side-path';
+for(let y=.3;y<L-.012;y+=.7){
+ block(-SIDE_WIDTH/X_SCALE,y,0,y+.012,YARD_LEVEL,YARD_LEVEL+.002,mat(0xa8a89b),sideGarden);
+ block(W,y,W+OPPOSITE_SIDE_WIDTH/X_SCALE,y+.012,YARD_LEVEL,YARD_LEVEL+.002,mat(0xa8a89b),sideGarden);
+}
+const entryStairs=new T.Group();entryStairs.name='entrance-stairs';scene.add(entryStairs);
+entranceSteps.forEach(step=>{const [x0,y0,x1,y1]=step.rect;const mesh=block(x0,y0,x1,y1,YARD_LEVEL-.015,step.top,mat(0xc7c3b7),entryStairs);mesh.name=step.id;mesh.userData.riser=STEP_RISE;});
+// Đường dốc riêng cho xe máy: rộng 90 cm, dài 2,5 m, dốc khoảng 12,4%.
+(function(){
+ const [x0,y0,x1,y1]=vehicleRamp.rect,bottom=YARD_LEVEL-.015;
+ const vertices=[x0,bottom,-y0,x1,bottom,-y0,x1,bottom,-y1,x0,bottom,-y1,x0,YARD_LEVEL,-y0,x1,YARD_LEVEL,-y0,x1,ENTRY_LEVEL,-y1,x0,ENTRY_LEVEL,-y1];
+ const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
+ geometry.setIndex([4,5,6,4,6,7,0,2,1,0,3,2,0,1,5,0,5,4,3,7,6,3,6,2,0,4,7,0,7,3,1,2,6,1,6,5]);
+ const uv=[];for(let i=0;i<8;i++)uv.push((vertices[i*3]-x0)*X_SCALE,vertices[i*3+2]/2.5);geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
+ const ramp=new T.Mesh(geometry,mat(0xc7c3b7));ramp.name='front-vehicle-ramp';ramp.userData={width:vehicleRamp.width,length:vehicleRamp.length,slope:(ENTRY_LEVEL-YARD_LEVEL)/vehicleRamp.length};entryStairs.add(ramp);
+ const angle=Math.atan((ENTRY_LEVEL-YARD_LEVEL)/vehicleRamp.length);
+ for(let y=y0+.15;y<-.1;y+=.18){const top=YARD_LEVEL+(ENTRY_LEVEL-YARD_LEVEL)*(y-y0)/(y1-y0),strip=new T.Mesh(new T.BoxGeometry(x1-x0-.08,.002,.015),mat(0xa8a89b));strip.name='ramp-grip-strip';strip.rotation.x=angle;strip.position.set((x0+x1)/2,top+.001,-y);entryStairs.add(strip);}
+})();
 
-// Mạch lát ngang, không thêm vật cản trên lối đi.
-for(let y=-.4;y<13.3;y+=.7)block(-SIDE_WIDTH/X_SCALE,y,0,y+.012,FLOOR,FLOOR+.002,mat(0xa8a89b),sideGarden);
 // Tường cửa đi: mỗi vách lấy danh sách [vị trí bắt đầu, kết thúc, cao cửa].
 // Cửa kính: [bắt đầu, kết thúc, cao bậu, cao đỉnh].
 function wallH(x0,x1,y,doors=[],windows=[],thick=TH){
@@ -4444,7 +4466,7 @@ dimensionRuntime=()=>{measurements3D.visible=dimensionsVisible&&mode!=='plan';la
 // Bối cảnh: sân trước 15 m, vườn sau 10 m, ngang đất 10 m.
 const surroundings=new T.Group();surroundings.name='surroundings';scene.add(surroundings);
 const siteLeft=-SIDE_WIDTH/X_SCALE,siteRight=W+OPPOSITE_SIDE_WIDTH/X_SCALE,frontY=-15,rearY=L+10;
-block(siteLeft,frontY,siteRight,0,-.13,-.045,mat(0xb6b7af),surroundings).name='front-concrete-yard';
+block(siteLeft,frontY,siteRight,0,-.13,YARD_LEVEL,mat(0xb6b7af),surroundings).name='front-concrete-yard';
 for(let y=-14;y<0;y+=1)block(siteLeft,y,siteRight,y+.014,-.045,-.041,mat(0x989d96),surroundings);
 for(let x=1.5;x<W;x+=2)block(x,frontY,x+.012,0,-.045,-.041,mat(0x989d96),surroundings);
 // Đất và thảm cỏ bên ngoài rào, chừa nguyên sân và mặt đường.
@@ -4672,7 +4694,14 @@ function updateHumanPose(moving,dt,direction=1){
 playerPosition.set(isMirrored?HOUSE_WIDTH-sx(2.2):sx(2.2),-.045,3.8);avatar.position.copy(playerPosition);avatar.visible=true;
 let thirdPerson=true,walkFov=100,firstPersonFov=100,thirdPersonFov=100,stepPhase=0;
 const followRay=new T.Raycaster();
-function walkingFloor(x,y){const cx=(isMirrored?HOUSE_WIDTH-x:x)/X_SCALE;return y>=0&&y<=L?FLOOR+.016:(((cx<0||cx>W)&&y>=-.60&&y<=13.30)?FLOOR:-.045);}
+function walkingFloor(x,y){
+ const cx=(isMirrored?HOUSE_WIDTH-x:x)/X_SCALE;
+ const [rx0,ry0,rx1,ry1]=vehicleRamp.rect;if(cx>=rx0&&cx<=rx1&&y>=ry0&&y<=ry1)return YARD_LEVEL+(ENTRY_LEVEL-YARD_LEVEL)*(y-ry0)/(ry1-ry0);
+ for(const step of entranceSteps){const [x0,y0,x1,y1]=step.rect;if(cx>=x0&&cx<=x1&&y>=y0&&y<=y1)return step.top;}
+ if(cx>=0&&cx<=W&&y>=0&&y<=L)return ENTRY_LEVEL;
+ if(y<=L)return YARD_LEVEL;
+ return -.13;
+}
 function updateWalkCamera(){
  const floor=walkingFloor(playerPosition.x,-playerPosition.z);playerPosition.y=floor;
  avatar.position.copy(playerPosition);avatar.rotation.y=yaw;avatar.visible=mode==='walk'&&thirdPerson;
@@ -4772,6 +4801,8 @@ function blocked(x,y){
  // Cho đi từ sân 15 m qua hiên vào nhà và ra vườn sau, giữ khoảng cách rào.
  const insidePlot=cx>=siteLeft+.18/X_SCALE&&cx<=siteRight-.18/X_SCALE&&y>=frontY+.18&&y<=rearY-.18;
  if(!insidePlot)return true;
+ // Không bước thẳng qua mép nền nhà cao; đi qua từng bậc trước/ở cửa bếp.
+ if(mode==='walk'&&Math.abs(walkingFloor(x,y)-walkingFloor(playerPosition.x,-playerPosition.z))>STEP_RISE+.02)return true;
  for(const a of solids)if(x>a[0]-.18&&x<a[2]+.18&&y>a[1]-.18&&y<a[3]+.18)return true;
  return false;}
 
