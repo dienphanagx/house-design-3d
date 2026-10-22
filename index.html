@@ -4012,16 +4012,14 @@ function setMode(m){mode=m;Object.entries(modes).forEach(([k,b])=>b.classList.to
 modes.plan.onclick=()=>{setMode('plan');note.textContent='Sơ đồ 2D đồng bộ với 3D. Dùng nút Kích thước để bật/tắt số đo trong 2D và 3D.';layoutControls();};
 setMode('plan'); // hiển thị sơ đồ ngay, không chờ tải Three.js hay WebGL
 if(!window.THREE||!THREE.OrbitControls){setMode('plan');note.textContent='Sơ đồ 2D đã sẵn sàng. Để xem mô hình 3D, cần kết nối Internet để tải thư viện Three.js.';['outside','cut','walk'].forEach(k=>modes[k].onclick=()=>{setMode('plan');note.textContent='Chế độ 3D cần Internet để tải thư viện Three.js. Bạn vẫn xem và chọn được các phòng trong sơ đồ 2D.';});return;}
-const isMobileDevice=matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const renderProfile={mobile:isMobileDevice,maxPixelRatio:isMobileDevice?1.25:2,minPixelRatio:isMobileDevice?Math.min(devicePixelRatio||1,.8):1,shadowSize:isMobileDevice?1024:2048,nearLeaves:isMobileDevice?300:720,farLeaves:isMobileDevice?70:140,farTrees:isMobileDevice?65:150,grassBlades:isMobileDevice?1600:5200,measurementInterval:isMobileDevice?120:40};
 const T=THREE,host=document.getElementById('view'),scene=new T.Scene();scene.background=new T.Color(0xd9e9ed);scene.fog=new T.Fog(0xd9e9ed,65,210);
 const cam=new T.PerspectiveCamera(60,1,.06,450);cam.rotation.order='YXZ';
 let renderer;
-try{renderer=new T.WebGLRenderer({antialias:!isMobileDevice,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,renderProfile.maxPixelRatio));renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;host.appendChild(renderer.domElement);}
+try{renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;host.appendChild(renderer.domElement);}
 catch(e){setMode('plan');note.textContent='Thiết bị không hỗ trợ WebGL. Bạn vẫn có thể xem bản 2D và bảng kích thước cửa mà không cần 3D.';['outside','cut','walk'].forEach(k=>modes[k].onclick=()=>{setMode('plan');});return;}
 const skyLight=new T.HemisphereLight(0xc4ddf6,0x777256,.72);scene.add(skyLight);
 const sun=new T.DirectionalLight(0xffefd5,2.2);sun.position.set(-16,24,9);sun.target.position.set(3,0,-4);scene.add(sun,sun.target);
-sun.castShadow=true;sun.shadow.mapSize.set(renderProfile.shadowSize,renderProfile.shadowSize);Object.assign(sun.shadow.camera,{left:-25,right:25,top:29,bottom:-24,near:1,far:85});sun.shadow.bias=-.00015;sun.shadow.normalBias=.035;sun.shadow.radius=2;sun.shadow.autoUpdate=false;sun.shadow.needsUpdate=true;
+sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-25,right:25,top:29,bottom:-24,near:1,far:85});sun.shadow.bias=-.00015;sun.shadow.normalBias=.035;sun.shadow.radius=2;sun.shadow.autoUpdate=false;sun.shadow.needsUpdate=true;
 
 const oc=new T.OrbitControls(cam,renderer.domElement);oc.enableDamping=true;oc.dampingFactor=.09;oc.maxDistance=70;oc.minDistance=.65;oc.enablePan=true;oc.maxPolarAngle=Math.PI/2-.04;oc.screenSpacePanning=true;oc.zoomSpeed=1.15;oc.mouseButtons.RIGHT=T.MOUSE.PAN;oc.touches.TWO=T.TOUCH.DOLLY_PAN;
 // Vân bề mặt được tạo ngay trong HTML, không tải thêm ảnh bên ngoài.
@@ -4039,7 +4037,7 @@ function surfaceTexture(kind){
   if(kind==='tile'&&(x<2||y<2))value=175;
   const i=(y*256+x)*4;data.data[i]=data.data[i+1]=data.data[i+2]=value;data.data[i+3]=255;
  }
- ctx.putImageData(data,0,0);const texture=new T.CanvasTexture(c);texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(kind==='fabric'?5:kind==='grass'?28:2,kind==='fabric'?5:kind==='grass'?28:2);texture.anisotropy=Math.min(isMobileDevice?2:8,renderer.capabilities.getMaxAnisotropy());texture.encoding=T.sRGBEncoding;
+ ctx.putImageData(data,0,0);const texture=new T.CanvasTexture(c);texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(kind==='fabric'?5:kind==='grass'?28:2,kind==='fabric'?5:kind==='grass'?28:2);texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());texture.encoding=T.sRGBEncoding;
  textureCache[kind]=texture;return texture;
 }
 const fabricColors=new Set([0x718a83,0xa7bab2,0xc5a3a2,0x93aaa9,0xfffaf3,0xf2eae0,0xece9e6,0xe5d8c2,0xb8a18a,0xb3aa97,0x95aa9c]);
@@ -4049,7 +4047,7 @@ const materialCache={};function mat(color,opacity=1){
  const linear=new T.Color(color).convertSRGBToLinear();
  let kind=fabricColors.has(color)?'fabric':woodColors.has(color)?'wood':([0x77935d,0x927652].includes(color)?'grass':[0xb6b7af,0xc7c3b7,0x555d61,0x5b6464].includes(color)?'stone':null);
  const m=new T.MeshStandardMaterial({color:linear,roughness:kind==='wood'?.48:kind==='fabric'?.96:.78,metalness:0,transparent:opacity<1,opacity,depthWrite:opacity===1,side:T.DoubleSide});
- if(kind){m.map=surfaceTexture(kind);if(!isMobileDevice)m.bumpMap=m.map;m.bumpScale=kind==='fabric'?.003:kind==='wood'?.0025:.008;}
+ if(kind){m.map=surfaceTexture(kind);m.bumpMap=m.map;m.bumpScale=kind==='fabric'?.003:kind==='wood'?.0025:.008;}
  if(opacity<1){m.roughness=.13;m.metalness=.18;m.color.set(0xc1d8db).convertSRGBToLinear();m.opacity=.25;m.envMapIntensity=.85;}
  if([0x9d8056,0x78858a,0x785d42,0x4d655d,0x3f5852].includes(color)){m.metalness=.65;m.roughness=.32;}
  materialCache[key]=m;return m;
@@ -4058,7 +4056,7 @@ const materialCache={};function mat(color,opacity=1){
 const envCanvas=document.createElement('canvas');envCanvas.width=512;envCanvas.height=256;const ec=envCanvas.getContext('2d'),eg=ec.createLinearGradient(0,0,0,256);eg.addColorStop(0,'#8caecc');eg.addColorStop(.48,'#edf1ee');eg.addColorStop(.55,'#999b81');eg.addColorStop(1,'#454d3a');ec.fillStyle=eg;ec.fillRect(0,0,512,256);ec.fillStyle='#fff5da';ec.fillRect(335,55,36,28);
 const envTexture=new T.CanvasTexture(envCanvas);envTexture.mapping=T.EquirectangularReflectionMapping;envTexture.encoding=T.sRGBEncoding;const pmrem=new T.PMREMGenerator(renderer);const environmentTarget=pmrem.fromEquirectangular(envTexture);scene.environment=environmentTarget.texture;envTexture.dispose();pmrem.dispose();
 function softBox(w,h,d,radius=.035){
- const radiusSafe=Math.min(radius,w*.22,h*.22,d*.22),geometry=new T.BoxGeometry(w,h,d,isMobileDevice?2:4,isMobileDevice?2:4,isMobileDevice?2:4),p=geometry.attributes.position,n=geometry.attributes.normal,inner=new T.Vector3(w/2-radiusSafe,h/2-radiusSafe,d/2-radiusSafe);
+ const radiusSafe=Math.min(radius,w*.22,h*.22,d*.22),geometry=new T.BoxGeometry(w,h,d,4,4,4),p=geometry.attributes.position,n=geometry.attributes.normal,inner=new T.Vector3(w/2-radiusSafe,h/2-radiusSafe,d/2-radiusSafe);
  for(let i=0;i<p.count;i++){const v=new T.Vector3().fromBufferAttribute(p,i),q=v.clone().clamp(inner.clone().negate(),inner),normal=v.clone().sub(q).normalize();q.addScaledVector(normal,radiusSafe);p.setXYZ(i,q.x,q.y,q.z);n.setXYZ(i,normal.x,normal.y,normal.z);}return geometry;
 }
 const plaster=mat(0xf4f0e7),edge=mat(0xc7bca7),base=mat(0xabaeaa),wood=mat(0x956d4f),glass=mat(0x82c7da,.45),roofM=mat(0x556779);
@@ -4522,7 +4520,7 @@ block(-180,-180,180,-24,-.28,-.205,mat(0x77935d),grassland).name='opposite-road-
 // Cụm cỏ gộp vào một hình học, nhẹ khi xoay và phóng to mô hình.
 let grassSeed=83;function grassRandom(){grassSeed=(grassSeed*1664525+1013904223)>>>0;return grassSeed/4294967296;}
 const grassVertices=[],grassColors=[];
-for(let i=0;i<renderProfile.grassBlades;i++){
+for(let i=0;i<5200;i++){
  const x=-22+grassRandom()*51,y=-32+grassRandom()*67;
  if((y> -24&&y< -15)||(x>=siteLeft-.12&&x<=siteRight+.12&&y>=frontY-.12&&y<=rearY+.12))continue;
  const h=.07+grassRandom()*.14,w=.025+grassRandom()*.035;
@@ -4591,20 +4589,19 @@ const leafTexture=new T.CanvasTexture(leafCanvas);leafTexture.encoding=T.sRGBEnc
 const leafMaterials=[0x8aa565,0x719558,0xa0af6c].map(c=>new T.MeshStandardMaterial({color:new T.Color(c).convertSRGBToLinear(),map:leafTexture,alphaTest:.45,side:T.DoubleSide,roughness:.9}));
 const leafGeometry=new T.PlaneGeometry(.38,.72);
 function detailedTree(tree,height,index,near){
- tree.userData.vegetation=true;tree.userData.nearVegetation=near;
- const bark=mat(0x806449);bark.map=surfaceTexture('wood');if(!isMobileDevice)bark.bumpMap=bark.map;bark.bumpScale=.04;
+ const bark=mat(0x806449);bark.map=surfaceTexture('wood');bark.bumpMap=bark.map;bark.bumpScale=.04;
  const trunk=new T.Mesh(new T.CylinderGeometry(height*.016,height*.03,height*.7,9),bark);trunk.position.y=height*.35;tree.add(trunk);
- const random=()=>gardenRandom(),branches=near?(isMobileDevice?4:7):(isMobileDevice?1:3);
+ const random=()=>gardenRandom(),branches=near?7:3;
  for(let j=0;j<branches;j++){
   const angle=j*2.399,start=new T.Vector3(0,height*(.33+j*.037),0),end=new T.Vector3(Math.cos(angle)*height*.25,height*(.65+random()*.18),Math.sin(angle)*height*.25),delta=end.clone().sub(start);
   const branch=new T.Mesh(new T.CylinderGeometry(.013,height*.012,delta.length(),6),bark);branch.position.copy(start).add(end).multiplyScalar(.5);branch.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());tree.add(branch);
  }
- const count=near?renderProfile.nearLeaves:renderProfile.farLeaves,leaves=new T.InstancedMesh(leafGeometry,leafMaterials[index%3],count),dummy=new T.Object3D();leaves.name='tree-leaves';
+ const count=near?720:140,leaves=new T.InstancedMesh(leafGeometry,leafMaterials[index%3],count),dummy=new T.Object3D();leaves.name='tree-leaves';
  for(let j=0;j<count;j++){
   const az=random()*Math.PI*2,u=random()*2-1,r=Math.cbrt(random()),ring=Math.sqrt(1-u*u);
   dummy.position.set(Math.cos(az)*ring*r*height*.36,height*.75+u*r*height*.32,Math.sin(az)*ring*r*height*.34);
   dummy.rotation.set(random()*Math.PI,random()*Math.PI*2,random()*Math.PI);
-  const scale=(near?.65:1.55)*(isMobileDevice?1.18:1)*(height/3)*(.7+random()*.5);dummy.scale.setScalar(scale);dummy.updateMatrix();leaves.setMatrixAt(j,dummy.matrix);
+  const scale=(near?.65:1.55)*(height/3)*(.7+random()*.5);dummy.scale.setScalar(scale);dummy.updateMatrix();leaves.setMatrixAt(j,dummy.matrix);
  }
  leaves.instanceMatrix.needsUpdate=true;leaves.castShadow=near;leaves.receiveShadow=true;tree.add(leaves);
 }
@@ -4618,40 +4615,12 @@ for(let i=0;i<19;i++){
 }
 // Cây ngoài khu đất tạo lớp cảnh gần và xa; chừa hành lang đường xe chạy.
 const distantLandscape=new T.Group();distantLandscape.name='distant-landscape';surroundings.add(distantLandscape);
-for(let i=0;i<renderProfile.farTrees;i++){
+for(let i=0;i<150;i++){
  const x=-135+gardenRandom()*270,y=-110+gardenRandom()*245;
  if((x>46&&x<58)||(y> -30&&y< -10)||(x>siteLeft-5&&x<siteRight+5&&y>frontY-5&&y<rearY+5))continue;
  const height=2.5+gardenRandom()*6.5,tree=new T.Group();tree.name='landscape-tree-'+i;tree.position.set(x,-.205,-y);distantLandscape.add(tree);
  detailedTree(tree,height,i,false);
 }
-// Gộp cây tĩnh theo vật liệu: ít lệnh vẽ hơn thay vì một lệnh cho mỗi cành/lùm lá.
-function batchVegetation(root){
- root.updateMatrixWorld(true);const inverseRoot=root.matrixWorld.clone().invert(),groups=new Map(),trees=[];
- root.traverse(o=>{if(o.userData.vegetation)trees.push(o);});
- trees.forEach(tree=>tree.traverse(mesh=>{if(!mesh.isMesh)return;
-  const far=!tree.userData.nearVegetation,key=mesh.material.uuid+'|'+Number(mesh.isInstancedMesh)+'|'+Number(far);
-  if(!groups.has(key))groups.set(key,{material:mesh.material,instanced:mesh.isInstancedMesh,far,meshes:[]});groups.get(key).meshes.push(mesh);
- }));
- const batchRoot=new T.Group();batchRoot.name='vegetation-batches';root.add(batchRoot);
- groups.forEach(group=>{
-  let merged;
-  if(group.instanced){
-   const count=group.meshes.reduce((sum,m)=>sum+m.count,0);merged=new T.InstancedMesh(leafGeometry,group.material,count);merged.frustumCulled=false;
-   const matrix=new T.Matrix4(),transform=new T.Matrix4();let index=0;
-   group.meshes.forEach(mesh=>{transform.multiplyMatrices(inverseRoot,mesh.matrixWorld);for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);matrix.premultiply(transform);merged.setMatrixAt(index++,matrix);}});merged.instanceMatrix.needsUpdate=true;
-  }else{
-   const positions=[],normals=[],uvs=[],indices=[],point=new T.Vector3(),normal=new T.Vector3(),transform=new T.Matrix4(),normalMatrix=new T.Matrix3();let offset=0;
-   group.meshes.forEach(mesh=>{transform.multiplyMatrices(inverseRoot,mesh.matrixWorld);normalMatrix.getNormalMatrix(transform);const geometry=mesh.geometry,p=geometry.attributes.position,n=geometry.attributes.normal,uv=geometry.attributes.uv;
-    for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i).applyMatrix4(transform);positions.push(point.x,point.y,point.z);normal.fromBufferAttribute(n,i).applyNormalMatrix(normalMatrix);normals.push(normal.x,normal.y,normal.z);uvs.push(uv?uv.getX(i):0,uv?uv.getY(i):0);}
-    if(geometry.index)for(let i=0;i<geometry.index.count;i++)indices.push(offset+geometry.index.getX(i));else for(let i=0;i<p.count;i++)indices.push(offset+i);offset+=p.count;
-   });
-   const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geometry.setIndex(indices);geometry.computeBoundingSphere();merged=new T.Mesh(geometry,group.material);
-  }
-  merged.name=group.instanced?'vegetation-leaves-batch':'vegetation-wood-batch';merged.userData.noShadow=group.far;merged.castShadow=!group.far;merged.receiveShadow=true;batchRoot.add(merged);
-  group.meshes.forEach(mesh=>{mesh.parent.remove(mesh);if(!mesh.isInstancedMesh)mesh.geometry.dispose();});
- });
-}
-batchVegetation(surroundings);
 // Nhánh đường phụ ở xa nối với đường chính.
 block(49,-110,55,-24,-.20,-.10,mat(0x5b6464),distantLandscape);
 block(49,-16,55,150,-.20,-.10,mat(0x5b6464),distantLandscape);
@@ -4719,7 +4688,7 @@ const walkingLimbs=[];
  personPart(new T.SphereGeometry(.059,10,8),0xd4a27d,0,-.49,0,arm);walkingLimbs.push({part:arm,sign:-side});
 });
 // Nhân vật có lưới da và khớp xương; dữ liệu được nhúng để file HTML tự chứa mẫu người.
-let humanRig=null,humanMoveWeight=0,humanPoseSettled=false;
+let humanRig=null,humanMoveWeight=0;
 function posedHumanBounds(root){
  root.updateMatrixWorld(true);const box=new T.Box3(),v=new T.Vector3();
  root.traverse(m=>{if(!m.isMesh)return;if(m.isSkinnedMesh)m.skeleton.update();const positions=m.geometry.attributes.position;
@@ -4763,7 +4732,7 @@ function aimHumanBone(bone,child,target){
  bone.quaternion.copy(parent.multiply(delta).multiply(world));bone.updateMatrixWorld(true);
 }
 function updateHumanPose(moving,dt,direction=1){
- if(!humanRig||(mode==='walk'&&!thirdPerson)||(!moving&&humanMoveWeight<.0001&&humanPoseSettled))return;humanPoseSettled=false;humanMoveWeight+=(Number(moving)-humanMoveWeight)*(1-Math.exp(-dt*12));
+ if(!humanRig)return;humanMoveWeight+=(Number(moving)-humanMoveWeight)*(1-Math.exp(-dt*12));
  const weight=humanMoveWeight,rig=humanRig;
  if(mode==='walk'){avatar.position.copy(playerPosition);avatar.position.y=walkingFloor(playerPosition.x,-playerPosition.z);avatar.rotation.y=yaw;}
  Object.values(rig.joints).forEach(joint=>joint.bone.quaternion.copy(joint.rest));
@@ -4795,7 +4764,6 @@ function updateHumanPose(moving,dt,direction=1){
   footWorld.premultiply(new T.Quaternion().setFromAxisAngle(pitchAxis,heel*weight*direction));
   leg.foot.quaternion.copy(leg.foot.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(footWorld));leg.foot.updateMatrixWorld(true);
  });
- if(!moving&&humanMoveWeight<.0001)humanPoseSettled=true;
 }
 
 playerPosition.set(isMirrored?HOUSE_WIDTH-sx(2.2):sx(2.2),-.045,3.8);avatar.position.copy(playerPosition);avatar.visible=true;
@@ -4817,8 +4785,8 @@ function updateWalkCamera(){
  if(thirdPerson){
   const back=new T.Vector3(0,.25,2.8).applyEuler(new T.Euler(pitch,yaw,0,'YXZ'));
   followRay.set(eye,back.clone().normalize());followRay.far=back.length();
-  const obstacle=cameraObstacleDistance(followRay.ray,back.length());
-  const distance=obstacle<back.length()?Math.max(.08,obstacle-.14):back.length();
+  const hit=followRay.intersectObjects(measurementOccluders,false).find(h=>h.distance>.05);
+  const distance=hit?Math.max(.08,hit.distance-.14):back.length();
   cam.position.addScaledVector(back.normalize(),distance);
   avatar.visible=distance>.55;
  }
@@ -4832,18 +4800,6 @@ solids=originalSolids.map(([x0,y0,x1,y1])=>[sx(x0),y0,sx(x1),y1]);
 // Chỉ giữ vài vách gần góc nhìn; nhãn không xuyên tường và không đè nhau.
 const measurementOccluders=[];house.traverse(o=>{if(o.isMesh&&!o.material.transparent){let p=o,inLandscape=false;while(p){if(p===surroundings){inLandscape=true;break;}p=p.parent;}if(!inLandscape)measurementOccluders.push(o);}});
 const measurementRay=new T.Raycaster(),viewPoint=new T.Vector3(),rayDirection=new T.Vector3();
-const cameraColliders=[],cameraLocalRay=new T.Ray(),cameraHitPoint=new T.Vector3();
-function rebuildCameraColliders(){
- cameraColliders.length=0;house.updateMatrixWorld(true);
- measurementOccluders.forEach(mesh=>{if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();cameraColliders.push({mesh,localBounds:mesh.geometry.boundingBox,worldBounds:mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld),world:mesh.matrixWorld.clone(),inverse:mesh.matrixWorld.clone().invert()});});
-}
-function cameraObstacleDistance(ray,maxDistance){
- let nearest=maxDistance;
- for(const entry of cameraColliders){if(!ray.intersectsBox(entry.worldBounds))continue;let visible=true;for(let parent=entry.mesh;parent;parent=parent.parent)if(!parent.visible){visible=false;break;}if(!visible)continue;
-  cameraLocalRay.copy(ray).applyMatrix4(entry.inverse);if(!cameraLocalRay.intersectBox(entry.localBounds,cameraHitPoint))continue;cameraHitPoint.applyMatrix4(entry.world);const distance=cameraHitPoint.distanceTo(ray.origin);if(distance>.05&&distance<nearest)nearest=distance;
- }return nearest;
-}
-
 const measuredDoorLeaves={D3:'bedroom-door-1',D4:'bedroom-door-2',D5:'toilet-door',D6:'storage-door'};
 function blocksMeasurement(hit,sprite){
  const code=sprite.userData.opening;if(mode==='walk'&&code){
@@ -4853,10 +4809,9 @@ function blocksMeasurement(hit,sprite){
  return true;
 }
 
-let lastMeasurementView='',lastMeasurementRefresh=0;
+let lastMeasurementView='';
 function updateMeasurementVisibility(){
  if(!measurements3D.visible)return;
- const refreshTime=performance.now();if(lastMeasurementView&&refreshTime-lastMeasurementRefresh<renderProfile.measurementInterval)return;lastMeasurementRefresh=refreshTime;
  const signature=[mode,isMirrored,cam.position.x.toFixed(2),cam.position.y.toFixed(2),cam.position.z.toFixed(2),cam.quaternion.x.toFixed(3),cam.quaternion.y.toFixed(3),cam.quaternion.z.toFixed(3),host.clientWidth,host.clientHeight].join('|');
  if(signature===lastMeasurementView)return;lastMeasurementView=signature;
  house.updateMatrixWorld(true);cam.updateMatrixWorld(true);
@@ -4898,7 +4853,7 @@ mirrorRuntime=()=>{
  labelGroup.children.forEach(p=>p.scale.x=isMirrored?-1:1);readableDecor.forEach(g=>g.scale.x=isMirrored?-1:1);
  solids=originalSolids.map(([x0,y0,x1,y1])=>isMirrored?[HOUSE_WIDTH-sx(x1),y0,HOUSE_WIDTH-sx(x0),y1]:[sx(x0),y0,sx(x1),y1]);
  if(mode==='walk'){playerPosition.x=HOUSE_WIDTH-playerPosition.x;yaw=-yaw;updateWalkCamera();}
- house.updateMatrixWorld(true);rebuildCameraColliders();
+ house.updateMatrixWorld(true);
 };
 mirrorRuntime();
 function focusOrbit(m,pos,target,showRoof){sun.shadow.needsUpdate=true;avatar.visible=true;setMode(m);oc.enabled=true;ceiling.visible=showRoof;labelGroup.visible=dimensionsVisible&&!showRoof;cam.fov=48;cam.updateProjectionMatrix();cam.position.set(...pos);oc.target.set(...target);oc.update();
@@ -4943,22 +4898,7 @@ function blocked(x,y){
  return false;}
 
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix();}addEventListener('resize',resize);resize();
-let lastShadowUpdate=0,lastClockUpdate=0,last=performance.now(),frameAverage=33,slowFrames=0,fastFrames=0,lastResolutionChange=0;
-let currentPixelRatio=renderer.getPixelRatio();
-function updateAdaptiveResolution(frameTime,now){
- if(!isMobileDevice||now<3000)return;frameAverage=frameAverage*.95+frameTime*.05;
- slowFrames=frameAverage>43?slowFrames+1:0;fastFrames=frameAverage<35?fastFrames+1:0;
- if(now-lastResolutionChange<3000)return;
- let next=currentPixelRatio;
- if(slowFrames>25)next=Math.max(renderProfile.minPixelRatio,currentPixelRatio-.15);
- else if(fastFrames>180)next=Math.min(renderProfile.maxPixelRatio,devicePixelRatio||1,currentPixelRatio+.1);
- if(Math.abs(next-currentPixelRatio)>.01){currentPixelRatio=next;renderer.setPixelRatio(next);lastResolutionChange=now;slowFrames=fastFrames=0;}
-}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)Object.keys(keys).forEach(key=>keys[key]=false);last=performance.now();});
-function animate(now){requestAnimationFrame(animate);
- if(document.hidden||mode==='plan'){last=now;return;}
- const elapsed=now-last;if(isMobileDevice&&elapsed<1000/30-1)return;
- const dt=Math.min(.07,elapsed/1000);last=now;updateAdaptiveResolution(elapsed,now);
+let lastShadowUpdate=0;let last=performance.now();function animate(now){requestAnimationFrame(animate);let dt=Math.min(.07,(now-last)/1000);last=now;
  if(mode==='walk'){
  const f=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),right=(keys.d?1:0)-(keys.a?1:0);
  yaw+=((keys.q||keys.arrowleft?1:0)-(keys.e||keys.arrowright?1:0))*1.7*dt;
@@ -4969,9 +4909,9 @@ function animate(now){requestAnimationFrame(animate);
  walkingLimbs.forEach(l=>l.part.rotation.x=moved?Math.sin(stepPhase)*.38*l.sign:0);updateHumanPose(moved,dt,f<0?-1:1);
  updateWalkCamera();
  }else if(mode!=='plan'){updateHumanPose(false,dt);oc.update();}
- if(mode!=='plan'){if(mode==='walk'&&now-lastShadowUpdate>(isMobileDevice?350:120)){sun.shadow.needsUpdate=true;lastShadowUpdate=now;}traffic.forEach(t=>{t.car.position.x+=t.direction*t.speed*dt;if(t.car.position.x>125)t.car.position.x=-125;if(t.car.position.x< -125)t.car.position.x=125;});if(now-lastClockUpdate>250){updateWallClock();lastClockUpdate=now;}updateMeasurementVisibility();renderer.render(scene,cam);}
+ if(mode!=='plan'){if(mode==='walk'&&now-lastShadowUpdate>120){sun.shadow.needsUpdate=true;lastShadowUpdate=now;}traffic.forEach(t=>{t.car.position.x+=t.direction*t.speed*dt;if(t.car.position.x>125)t.car.position.x=-125;if(t.car.position.x< -125)t.car.position.x=125;});updateWallClock();updateMeasurementVisibility();renderer.render(scene,cam);}
 }
-scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;let p=o,far=false;while(p){if(p.userData.noShadow||p===distantLandscape||p===grassland||p.name.startsWith('road-car-')){far=true;break;}p=p.parent;}o.castShadow=!far&&!o.material.transparent&&o.name!=='outer-grass-ground'&&o.name!=='opposite-road-grass';}});
+scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;let p=o,far=false;while(p){if(p===distantLandscape||p===grassland||p.name.startsWith('road-car-')){far=true;break;}p=p.parent;}o.castShadow=!far&&!o.material.transparent&&o.name!=='outer-grass-ground'&&o.name!=='opposite-road-grass';}});
 // Mặc định xem nhà có mái; khi không tải được WebGL vẫn dùng mặt bằng 2D.
 modes.outside.click();requestAnimationFrame(animate);
 })();
