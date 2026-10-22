@@ -3715,7 +3715,7 @@ let mode='plan';const W=7.3,L=13,TH=.16,FLOOR=.25,TOP=3.5;
 const HOUSE_WIDTH=7.5,LAND_WIDTH=10,X_SCALE=HOUSE_WIDTH/W,OPPOSITE_SIDE_WIDTH=.5,SIDE_WIDTH=LAND_WIDTH-HOUSE_WIDTH-OPPOSITE_SIDE_WIDTH;
 const sx=x=>x*X_SCALE;
 const YARD_LEVEL=-.045,ENTRY_LEVEL=FLOOR+.016,STEP_RISE=(ENTRY_LEVEL-YARD_LEVEL)/2;
-const vehicleRamp={rect:[.30,-2.50,.30+.90/X_SCALE,0],width:.90,length:2.50};
+const vehicleRamp={rect:[.30,-1.50,.30+.90/X_SCALE,0],width:.90,length:1.50};
 // Hai bậc đều nhau, mặt bậc sâu 32 cm; dùng chung cho 2D, 3D và nhân vật.
 const entranceSteps=[
  {id:'front-step-1',rect:[1.205,-.64,3.405,-.32],top:YARD_LEVEL+STEP_RISE},
@@ -3849,7 +3849,7 @@ function makePlan(){
  rect(W*100,-60,OPPOSITE_SIDE_WIDTH/X_SCALE*100,1360,'#d9d4c7',{stroke:'#a8a79c','stroke-width':1},outside);
  text(W*100+OPPOSITE_SIDE_WIDTH*50/X_SCALE,660,fmt(OPPOSITE_SIDE_WIDTH)+' m',10,600,'#52675f',outside).classList.add('dimension');
  entranceSteps.forEach(step=>{const [x0,y0,x1,y1]=step.rect;rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,'#ddd9d0',{stroke:'#8d958d','stroke-width':2,'data-stair':step.id});});
- {const [x0,y0,x1,y1]=vehicleRamp.rect;rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,'#d5d5ce',{stroke:'#8d958d','stroke-width':2,'data-vehicle-ramp':'front'});const middle=(x0+x1)*50;text(middle,-150,'DỐC XE',12,700,'#52675f');line(middle,-125,middle,-35,'#52675f',2);node('path',{d:'M'+(middle-7)+' -48 L'+middle+' -34 L'+(middle+7)+' -48',fill:'none',stroke:'#52675f','stroke-width':2});}
+ {const [x0,y0,x1,y1]=vehicleRamp.rect;rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,'#d5d5ce',{stroke:'#8d958d','stroke-width':2,'data-vehicle-ramp':'front'});const middle=(x0+x1)*50;text(middle,-90,'DỐC XE',12,700,'#52675f');line(middle,-75,middle,-35,'#52675f',2);node('path',{d:'M'+(middle-7)+' -48 L'+middle+' -34 L'+(middle+7)+' -48',fill:'none',stroke:'#52675f','stroke-width':2});}
  rect(0,0,730,1300,'#fdfcf9'); // các tường được vẽ riêng để giữ lối hiên mở và mảng kính lớn
  rooms.forEach(r=>{let [x0,y0,x1,y1]=r.rect;let g=node('g',{'data-room':r.id,class:'rm'});rect(x0*100,y0*100,(x1-x0)*100,(y1-y0)*100,r.svg,{},g);});
  // Vách ngăn: khoảng trống là vị trí cửa.
@@ -3968,6 +3968,22 @@ walls.forEach(w=>[['doors','door'],['windows','window']].forEach(([field,type])=
 })));
 sv.setAttribute('viewBox',[-SIDE_WIDTH*100-75,-285,LAND_WIDTH*100+130,1700].join(' '));
 mirrorDrawing(sv,730);updateMirrorDrawings();
+// Sơ đồ khu đất riêng để số đo sân không làm mặt bằng nội thất bị thu nhỏ.
+const siteDimensionSection=document.createElement('section');siteDimensionSection.id='site-dimensions-2d';siteDimensionSection.className='dimension';
+siteDimensionSection.innerHTML='<h2 style="font-size:15px;margin:18px 0 6px">Kích thước sân và lối hông</h2><p>Mặt đường ở phía trái sơ đồ dưới.</p>';
+const siteSvg=node('svg',{viewBox:'-160 -80 4100 1350',width:'100%',role:'img','aria-label':'Sân trước 10 × 15 mét, nhà rộng 7,5 mét dài 13 mét, lối hông 2 mét và 0,5 mét'},siteDimensionSection);
+function siteBox(x,y,w,h,color){return node('rect',{x,y,width:w,height:h,fill:color,stroke:'#607a71','stroke-width':9},siteSvg);}
+function siteText(x,y,value,size=76){const el=node('text',{x,y,'text-anchor':'middle','font-family':'Arial','font-size':size,'font-weight':600,fill:'#31564d'},siteSvg);el.textContent=value;return el;}
+siteBox(0,0,1500,LAND_WIDTH*100,'#deddd5');siteBox(1500,0,1300,LAND_WIDTH*100,'#d9e3d1');siteBox(2800,0,1000,LAND_WIDTH*100,'#c6d6b3');
+siteBox(1500,SIDE_WIDTH*100,1300,HOUSE_WIDTH*100,'#f5ecd9');
+siteText(750,430,'SÂN TRƯỚC');siteText(750,550,fmt(LAND_WIDTH)+' × 15 m');
+siteText(2150,SIDE_WIDTH*100+HOUSE_WIDTH*50-40,'NHÀ');siteText(2150,SIDE_WIDTH*100+HOUSE_WIDTH*50+80,fmt(HOUSE_WIDTH)+' × '+fmt(L)+' m');
+siteText(3300,430,'VƯỜN SAU');siteText(3300,550,fmt(LAND_WIDTH)+' × 10 m');
+siteText(2150,SIDE_WIDTH*50+25,'Hông '+fmt(SIDE_WIDTH)+' × '+fmt(L)+' m',66);
+siteText(2150,LAND_WIDTH*100-OPPOSITE_SIDE_WIDTH*50+18,'Hông '+fmt(OPPOSITE_SIDE_WIDTH)+' × '+fmt(L)+' m',54);
+node('path',{d:'M0 1080 V1130 H3800 V1080',fill:'none',stroke:'#607a71','stroke-width':7},siteSvg);siteText(1900,1235,'Ngang '+fmt(LAND_WIDTH)+' m · Tổng chiều dài 38 m',74);
+document.getElementById('inline-spec').before(siteDimensionSection);
+
 
 const details=document.createElement('div');details.id='wall-dimensions';details.className='dimension';
 const roomComparison=document.createElement('p');roomComparison.className='window-desc dimension';roomComparison.id='bedroom-comparison';roomComparison.textContent='Phòng ngủ 1: '+rooms.find(r=>r.id==='ngu1').area+' · Phòng ngủ 2: '+rooms.find(r=>r.id==='ngu2').area;document.getElementById('paper').querySelector('svg').before(roomComparison);
@@ -4060,13 +4076,13 @@ for(let y=.3;y<L-.012;y+=.7){
 }
 const entryStairs=new T.Group();entryStairs.name='entrance-stairs';scene.add(entryStairs);
 entranceSteps.forEach(step=>{const [x0,y0,x1,y1]=step.rect;const mesh=block(x0,y0,x1,y1,YARD_LEVEL-.015,step.top,mat(0xc7c3b7),entryStairs);mesh.name=step.id;mesh.userData.riser=STEP_RISE;});
-// Đường dốc riêng cho xe máy: rộng 90 cm, dài 2,5 m, dốc khoảng 12,4%.
+// Đường dốc riêng cho xe máy: rộng 90 cm, dài 1,5 m, dốc khoảng 20,7%.
 (function(){
  const [x0,y0,x1,y1]=vehicleRamp.rect,bottom=YARD_LEVEL-.015;
  const vertices=[x0,bottom,-y0,x1,bottom,-y0,x1,bottom,-y1,x0,bottom,-y1,x0,YARD_LEVEL,-y0,x1,YARD_LEVEL,-y0,x1,ENTRY_LEVEL,-y1,x0,ENTRY_LEVEL,-y1];
  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
  geometry.setIndex([4,5,6,4,6,7,0,2,1,0,3,2,0,1,5,0,5,4,3,7,6,3,6,2,0,4,7,0,7,3,1,2,6,1,6,5]);
- const uv=[];for(let i=0;i<8;i++)uv.push((vertices[i*3]-x0)*X_SCALE,vertices[i*3+2]/2.5);geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
+ const uv=[];for(let i=0;i<8;i++)uv.push((vertices[i*3]-x0)*X_SCALE,vertices[i*3+2]/vehicleRamp.length);geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
  const ramp=new T.Mesh(geometry,mat(0xc7c3b7));ramp.name='front-vehicle-ramp';ramp.userData={width:vehicleRamp.width,length:vehicleRamp.length,slope:(ENTRY_LEVEL-YARD_LEVEL)/vehicleRamp.length};entryStairs.add(ramp);
  const angle=Math.atan((ENTRY_LEVEL-YARD_LEVEL)/vehicleRamp.length);
  for(let y=y0+.15;y<-.1;y+=.18){const top=YARD_LEVEL+(ENTRY_LEVEL-YARD_LEVEL)*(y-y0)/(y1-y0),strip=new T.Mesh(new T.BoxGeometry(x1-x0-.08,.002,.015),mat(0xa8a89b));strip.name='ramp-grip-strip';strip.rotation.x=angle;strip.position.set((x0+x1)/2,top+.001,-y);entryStairs.add(strip);}
@@ -4415,19 +4431,21 @@ block(0,0,.25,.25,FLOOR,TOP+.25,mat(0xf6f6f1));
 block(4.11,0,4.36,.25,FLOOR,TOP+.25,mat(0xf6f6f1));
 // Tường trang trí đứng bên phải khung cửa sổ, đặc trưng nhà hộp.
 block(7.05,0,7.30,.25,FLOOR,TOP+.25,mat(0xb4b9b0));
-// Ống thoát nước phía sau (vị trí minh họa, cần kỹ sư bố trí lại).
-block(7.19,12.70,7.30,12.81,0.0,roofTop+.6,mat(0x9aaba7));
+// Chi tiết góc sau kết thúc ngang đỉnh tường, không nhô lên khi mở mái.
+block(7.19,12.70,7.30,12.81,0.0,FLOOR+TOP,mat(0x9aaba7)).name='rear-drain-detail';
 // Đường đo 3D lấy trực tiếp dữ liệu vách; chiều cao tính từ sàn hoàn thiện.
 const measurements3D=new T.Group();measurements3D.name='wall-measurements-3d';scene.add(measurements3D);
 const measurementLine=new T.LineBasicMaterial({color:0x226f79,depthTest:true,transparent:false,opacity:1});
 const wallMeasurementGroups=new Map();let measurementParent=measurements3D;
 function measureLine(a,b){const geometry=new T.BufferGeometry().setFromPoints([new T.Vector3(...a),new T.Vector3(...b)]);const line=new T.Line(geometry,measurementLine);line.renderOrder=20;measurementParent.add(line);}
 function measureLabel(message,position,width=1.65){
- const canvas=document.createElement('canvas');canvas.width=640;canvas.height=112;
- const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,640,112);ctx.strokeStyle='#61908d';ctx.lineWidth=3;ctx.strokeRect(2,2,636,108);ctx.fillStyle='#18545d';ctx.font='600 32px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(message,320,56,615);
+ const lines=message.split('\n'),height=lines.length>1?160:112,canvas=document.createElement('canvas');canvas.width=640;canvas.height=height;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,640,height);ctx.strokeStyle='#61908d';ctx.lineWidth=3;ctx.strokeRect(2,2,636,height-4);ctx.fillStyle='#18545d';ctx.font='600 32px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+ lines.forEach((line,i)=>ctx.fillText(line,320,height*(i+.5)/lines.length,615));
  const material=new T.SpriteMaterial({map:new T.CanvasTexture(canvas),depthTest:true,depthWrite:true,transparent:false,toneMapped:false});
- const sprite=new T.Sprite(material);sprite.name='measurement-label';sprite.userData.measurement=message;sprite.position.set(...position);sprite.scale.set(width,width*112/640,1);sprite.renderOrder=21;measurementParent.add(sprite);
+ const sprite=new T.Sprite(material);sprite.name='measurement-label';sprite.userData.measurement=message;sprite.position.set(...position);sprite.scale.set(width,width*height/640,1);sprite.renderOrder=21;measurementParent.add(sprite);return sprite;
 }
+
 walls.forEach(w=>{
  const group=new T.Group();group.name='measurements-'+w.id;group.userData.wall=w;wallMeasurementGroups.set(w.id,group);measurements3D.add(group);measurementParent=group;
  const h=w.axis==='h',offset=w.pos<(h?L:W)/2?-.22:.22,level=FLOOR+TOP+.10;
@@ -4457,6 +4475,32 @@ walls.forEach(w=>{
  }));
 });
 
+// Khi đi trong nhà, số đo cửa được đặt ở mặt vách đang nhìn thay vì cố định phía ngoài.
+const walkOpeningMeasurements=new T.Group();walkOpeningMeasurements.name='walk-opening-measurements';measurements3D.add(walkOpeningMeasurements);walkOpeningMeasurements.visible=false;
+const openingMeasurementGroups=[];
+const openingNames={D1:'Cửa hông bếp',D2:'Cửa chính',D3:'Cửa phòng ngủ 1',D4:'Cửa phòng ngủ 2',D5:'Cửa nhà vệ sinh',D6:'Cửa kho','Lối bếp':'Lối vào bếp',K1:'Kính phòng ngủ 1',K2:'Cửa sổ phòng ngủ 1',K3:'Cửa sổ phòng khách',K4:'Cửa sổ phòng ngủ 2',K5:'Cửa sổ nhà vệ sinh',K6:'Cửa sổ kho'};
+walls.forEach(w=>[['doors','door'],['windows','window']].forEach(([field,type])=>w[field].forEach((o,index)=>{
+ const group=new T.Group(),horizontal=w.axis==='h',bottom=type==='door'?0:o[2],top=type==='door'?o[2]:o[3],code=openingCodes[w.id]?.[type]?.[index]||'Lối mở';
+ group.name='walk-opening-'+code;group.userData={wall:w,code};walkOpeningMeasurements.add(group);openingMeasurementGroups.push(group);measurementParent=group;
+ const point=(along,height)=>horizontal?[along,height,-w.pos]:[w.pos,height,-along],level=FLOOR+top+.045;
+ measureLine(point(o[0],level),point(o[1],level));[o[0],o[1]].forEach(along=>measureLine(point(along,level-.045),point(along,level+.045)));
+ measureLine(point(o[1]-.02,FLOOR+bottom),point(o[1]-.02,FLOOR+top));
+ const size='Rộng '+fmt((o[1]-o[0])*(horizontal?X_SCALE:1))+' × cao '+fmt(top-bottom)+' m'+(type==='window'?' · bậu '+fmt(bottom)+' m':'');
+ const label=measureLabel((openingNames[code]||code)+'\n'+size,point((o[0]+o[1])/2,Math.min(FLOOR+TOP-.25,FLOOR+top+.23)),type==='window'?1.85:1.6);
+ label.userData.opening=code;
+ // Chữ là chú thích nổi; kiểm tra che khuất bằng tâm nhãn để không bị vách cắt đôi khi nhìn chéo.
+ label.material.depthTest=false;label.material.depthWrite=false;label.renderOrder=100;
+})));
+// Sân và lối hông lấy kích thước trực tiếp từ ranh đất và nền nhà.
+const siteMeasurements=new T.Group();siteMeasurements.name='site-measurements';measurements3D.add(siteMeasurements);measurementParent=siteMeasurements;
+const sideStart=-SIDE_WIDTH/X_SCALE,otherEnd=W+OPPOSITE_SIDE_WIDTH/X_SCALE,siteMid=(sideStart+otherEnd)/2,siteHeight=YARD_LEVEL+.12;
+measureLine([sideStart,siteHeight,13.5],[otherEnd,siteHeight,13.5]);
+measureLine([sideStart+.15,siteHeight,15],[sideStart+.15,siteHeight,0]);
+measureLabel('Sân trước\n'+fmt(LAND_WIDTH)+' × 15 m',[siteMid,YARD_LEVEL+.35,7.5],2.7);
+[[sideStart,0,SIDE_WIDTH],[W,otherEnd,OPPOSITE_SIDE_WIDTH]].forEach(([x0,x1,width])=>{
+ measureLine([x0,siteHeight,-5.4],[x1,siteHeight,-5.4]);measureLine([(x0+x1)/2,siteHeight,0],[(x0+x1)/2,siteHeight,-L]);
+ measureLabel('Lối hông\n'+fmt(width)+' × '+fmt(L)+' m',[(x0+x1)/2,YARD_LEVEL+.4,-L/2],width<1?1.05:1.75);
+});
 measurementParent=measurements3D;
 measureLabel('Bàn thờ · 1,20 × '+fmt(sx(.38))+' m · mặt kệ cao 2,21 m',[3.86,FLOOR+2.52,-5.05],2.4);
 measureLabel('Nhà '+fmt(HOUSE_WIDTH)+' × '+fmt(L)+' m · Tường cao '+fmt(TOP)+' m',[W/2,FLOOR+.15,1.05],3.2);
@@ -4672,25 +4716,56 @@ const humanReady=new Promise(resolve=>{
   const bounds=posedHumanBounds(model),height=bounds.max.y-bounds.min.y,center=bounds.getCenter(new T.Vector3()),scale=PLAYER_HEIGHT/height;
   const body=new T.Group();body.name='human-body';body.scale.setScalar(scale);body.rotation.y=Math.PI;model.position.set(-center.x,-bounds.min.y,-center.z);body.add(model);avatar.add(body);
   const joints={};model.updateMatrixWorld(true);
-  ['LeftUpLeg','RightUpLeg','LeftLeg','RightLeg','LeftFoot','RightFoot','LeftArm','RightArm','LeftForeArm','RightForeArm'].forEach(name=>{const bone=model.getObjectByName(name);if(!bone)return;
+  ['LeftUpLeg','RightUpLeg','LeftLeg','RightLeg','LeftFoot','RightFoot','LeftArm','RightArm','LeftForeArm','RightForeArm','Spine','Spine1','Spine2','Neck','Head'].forEach(name=>{const bone=model.getObjectByName(name);if(!bone)return;
    const parentRotation=bone.parent.getWorldQuaternion(new T.Quaternion()),axis=new T.Vector3(1,0,0).applyQuaternion(body.getWorldQuaternion(new T.Quaternion())).applyQuaternion(parentRotation.invert());
    joints[name]={bone,rest:bone.quaternion.clone(),axis};
   });
   avatar.updateMatrixWorld(true);const feet=['LeftFoot','RightFoot'].map(name=>model.getObjectByName(name));const footRestY=Math.min(...feet.map(foot=>foot.getWorldPosition(new T.Vector3()).y))-avatar.position.y;
-  humanRig={body,model,joints,feet,footRestY};avatar.remove(humanFallback);avatar.userData.modelLoaded=true;avatar.userData.standingHeight=height*scale;sun.shadow.needsUpdate=true;resolve(true);
+  const legs=['Left','Right'].map(side=>{const hip=model.getObjectByName(side+'UpLeg'),knee=model.getObjectByName(side+'Leg'),foot=model.getObjectByName(side+'Foot'),h=hip.getWorldPosition(new T.Vector3()),k=knee.getWorldPosition(new T.Vector3()),f=foot.getWorldPosition(new T.Vector3());return {hip,knee,foot,length1:h.distanceTo(k),length2:k.distanceTo(f),restFoot:avatar.worldToLocal(f.clone()),footRotation:avatar.getWorldQuaternion(new T.Quaternion()).invert().multiply(foot.getWorldQuaternion(new T.Quaternion()))};});
+  humanRig={body,model,joints,feet,footRestY,legs};avatar.remove(humanFallback);avatar.userData.modelLoaded=true;avatar.userData.standingHeight=height*scale;sun.shadow.needsUpdate=true;resolve(true);
  },error=>{console.warn('Không tải được mẫu người, dùng nhân vật dự phòng.',error);resolve(false);});
 });
-function updateHumanPose(moving,dt,direction=1){
- if(!humanRig)return;humanMoveWeight+=(Number(moving)-humanMoveWeight)*(1-Math.exp(-dt*14));
- const weight=humanMoveWeight;
- function turn(name,angle){const joint=humanRig.joints[name];if(joint)joint.bone.quaternion.copy(joint.rest).premultiply(new T.Quaternion().setFromAxisAngle(joint.axis,angle));}
- ['Left','Right'].forEach((side,i)=>{const phase=stepPhase+(i?Math.PI:0),swing=Math.sin(phase)*weight;
-  turn(side+'UpLeg',-.32*swing*direction);turn(side+'Leg',Math.max(0,swing)*.52);turn(side+'Foot',-Math.max(0,swing)*.22);
-  turn(side+'Arm',.26*swing*direction);turn(side+'ForeArm',-.10-Math.max(0,-swing)*.18);
- });
- humanRig.body.position.y=0;avatar.updateMatrixWorld(true);const lowestFoot=Math.min(...humanRig.feet.map(foot=>foot.getWorldPosition(new T.Vector3()).y))-avatar.position.y;
- humanRig.body.position.y=T.MathUtils.clamp(humanRig.footRestY-lowestFoot,-.12,.08);
+// Giải vị trí hai khớp chân theo điểm đặt bàn chân: đầu gối gập đúng hướng.
+function aimHumanBone(bone,child,target){
+ const origin=bone.getWorldPosition(new T.Vector3()),current=child.getWorldPosition(new T.Vector3()).sub(origin).normalize(),desired=target.clone().sub(origin).normalize();
+ const delta=new T.Quaternion().setFromUnitVectors(current,desired),world=bone.getWorldQuaternion(new T.Quaternion()),parent=bone.parent.getWorldQuaternion(new T.Quaternion()).invert();
+ bone.quaternion.copy(parent.multiply(delta).multiply(world));bone.updateMatrixWorld(true);
 }
+function updateHumanPose(moving,dt,direction=1){
+ if(!humanRig)return;humanMoveWeight+=(Number(moving)-humanMoveWeight)*(1-Math.exp(-dt*12));
+ const weight=humanMoveWeight,rig=humanRig;
+ if(mode==='walk'){avatar.position.copy(playerPosition);avatar.position.y=walkingFloor(playerPosition.x,-playerPosition.z);avatar.rotation.y=yaw;}
+ Object.values(rig.joints).forEach(joint=>joint.bone.quaternion.copy(joint.rest));
+ rig.body.position.set(Math.sin(stepPhase)*.008*weight,-(.018+.006*Math.cos(stepPhase*2))*weight,0);avatar.updateMatrixWorld(true);
+ const rootRotation=avatar.getWorldQuaternion(new T.Quaternion()),forward=new T.Vector3(0,0,-1).applyQuaternion(rootRotation);
+ function turn(name,angle,axis=new T.Vector3(1,0,0)){
+  const joint=rig.joints[name];if(!joint)return;
+  const localAxis=axis.applyQuaternion(rootRotation).applyQuaternion(joint.bone.parent.getWorldQuaternion(new T.Quaternion()).invert());
+  joint.bone.quaternion.copy(joint.rest).premultiply(new T.Quaternion().setFromAxisAngle(localAxis,angle));joint.bone.updateMatrixWorld(true);
+ }
+ turn('Spine1',Math.sin(stepPhase)*.035*weight,new T.Vector3(0,1,0));
+ turn('Spine2',-Math.sin(stepPhase)*.02*weight,new T.Vector3(0,1,0));
+ turn('Head',-Math.sin(stepPhase)*.012*weight,new T.Vector3(0,1,0));
+ ['Left','Right'].forEach((side,i)=>{
+  const phase=((stepPhase+(i?Math.PI:0))%(Math.PI*2)+Math.PI*2)%(Math.PI*2),swing=Math.sin(phase)*weight,stance=phase<Math.PI;
+  turn(side+'Arm',.24*swing*direction);turn(side+'ForeArm',-.13-(.14+.13*Math.max(0,-Math.sin(phase)))*weight);
+  const leg=rig.legs[i],progress=stance?phase/Math.PI:(phase-Math.PI)/Math.PI;
+  const travel=(stance?-.28+.56*progress:.28*Math.cos(progress*Math.PI))*weight*direction;
+  const lift=stance?0:.095*Math.sin(progress*Math.PI)*weight,target=leg.restFoot.clone();target.z+=travel;target.y+=lift;
+  avatar.localToWorld(target);
+  if(mode==='walk'){const floor=walkingFloor(target.x,-target.z);target.y+=T.MathUtils.clamp(floor-avatar.position.y,-.17,.17);}
+  const hip=leg.hip.getWorldPosition(new T.Vector3()),axis=target.clone().sub(hip),distance=T.MathUtils.clamp(axis.length(),Math.abs(leg.length1-leg.length2)+.002,leg.length1+leg.length2-.001);axis.normalize();
+  const reachable=hip.clone().addScaledVector(axis,distance),along=(leg.length1*leg.length1-leg.length2*leg.length2+distance*distance)/(2*distance),bend=Math.sqrt(Math.max(0,leg.length1*leg.length1-along*along));
+  const pole=forward.clone().addScaledVector(axis,-forward.dot(axis)).normalize(),kneeTarget=hip.clone().addScaledVector(axis,along).addScaledVector(pole,bend);
+  aimHumanBone(leg.hip,leg.knee,kneeTarget);aimHumanBone(leg.knee,leg.foot,reachable);
+  // Gót chạm trước, mũi chân rời sau; cổ chân theo mặt dốc khi dắt xe.
+  const heel=stance?Math.max(0,1-progress*4)*.09-Math.max(0,(progress-.7)/.3)*.15:Math.sin(progress*Math.PI)*.06;
+  const footWorld=rootRotation.clone().multiply(leg.footRotation),pitchAxis=new T.Vector3(1,0,0).applyQuaternion(rootRotation);
+  footWorld.premultiply(new T.Quaternion().setFromAxisAngle(pitchAxis,heel*weight*direction));
+  leg.foot.quaternion.copy(leg.foot.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(footWorld));leg.foot.updateMatrixWorld(true);
+ });
+}
+
 playerPosition.set(isMirrored?HOUSE_WIDTH-sx(2.2):sx(2.2),-.045,3.8);avatar.position.copy(playerPosition);avatar.visible=true;
 let thirdPerson=true,walkFov=100,firstPersonFov=100,thirdPersonFov=100,stepPhase=0;
 const followRay=new T.Raycaster();
@@ -4725,6 +4800,15 @@ solids=originalSolids.map(([x0,y0,x1,y1])=>[sx(x0),y0,sx(x1),y1]);
 // Chỉ giữ vài vách gần góc nhìn; nhãn không xuyên tường và không đè nhau.
 const measurementOccluders=[];house.traverse(o=>{if(o.isMesh&&!o.material.transparent){let p=o,inLandscape=false;while(p){if(p===surroundings){inLandscape=true;break;}p=p.parent;}if(!inLandscape)measurementOccluders.push(o);}});
 const measurementRay=new T.Raycaster(),viewPoint=new T.Vector3(),rayDirection=new T.Vector3();
+const measuredDoorLeaves={D3:'bedroom-door-1',D4:'bedroom-door-2',D5:'toilet-door',D6:'storage-door'};
+function blocksMeasurement(hit,sprite){
+ const code=sprite.userData.opening;if(mode==='walk'&&code){
+  if(hit.object.name===measuredDoorLeaves[code])return false;
+  for(let p=hit.object;p;p=p.parent)if(p.name==='curtains-'+code)return false;
+ }
+ return true;
+}
+
 let lastMeasurementView='';
 function updateMeasurementVisibility(){
  if(!measurements3D.visible)return;
@@ -4732,14 +4816,21 @@ function updateMeasurementVisibility(){
  if(signature===lastMeasurementView)return;lastMeasurementView=signature;
  house.updateMatrixWorld(true);cam.updateMatrixWorld(true);
  const cx=(isMirrored?HOUSE_WIDTH-cam.position.x:cam.position.x)/X_SCALE,cy=-cam.position.z;
+ const walking=mode==='walk';walkOpeningMeasurements.visible=walking;
+ openingMeasurementGroups.forEach(group=>{const w=group.userData.wall,side=(w.axis==='h'?cy:cx)>=w.pos?1:-1;group.position.set(w.axis==='v'?side*(TH/2+.075):0,0,w.axis==='h'?-side*(TH/2+.075):0);group.visible=walking;});
+ siteMeasurements.visible=!walking||cx<0||cx>W||cy<0;
+ house.updateMatrixWorld(true);
  const exterior={V1:cy<.08,V2:cy>12.92,V3:cx<.08,V4:cx>7.22};
  const groups=[...wallMeasurementGroups.values()];
  const ranked=groups.filter(g=>mode!=='outside'||exterior[g.userData.wall.id]).sort((a,b)=>{
   function distance(g){const w=g.userData.wall,x=w.axis==='h'?(w.a+w.b)/2:w.pos,y=w.axis==='h'?w.pos:(w.a+w.b)/2;return (cx-x)**2+(cy-y)**2;}
   return distance(a)-distance(b);
  });
- const selected=new Set(ranked.slice(0,mode==='outside'?2:3));groups.forEach(g=>g.visible=selected.has(g));
- const labels=[];measurements3D.traverse(o=>{if(o.isSprite){o.visible=true;if(o.parent===measurements3D||selected.has(o.parent))labels.push(o);}});
+ const selected=new Set(ranked.slice(0,mode==='outside'?2:3));groups.forEach(g=>g.visible=!walking&&selected.has(g));
+ const labels=[];measurements3D.traverse(o=>{if(o.isSprite){o.visible=false;
+  if(walking){if(o.parent?.parent===walkOpeningMeasurements||(siteMeasurements.visible&&o.parent===siteMeasurements))labels.push(o);}
+  else if(o.parent===measurements3D||selected.has(o.parent)||o.parent===siteMeasurements)labels.push(o);
+ }});
  const occupied=[];let shown=0;
  labels.sort((a,b)=>a.getWorldPosition(new T.Vector3()).distanceToSquared(cam.position)-b.getWorldPosition(new T.Vector3()).distanceToSquared(cam.position));
  for(const sprite of labels){
@@ -4747,12 +4838,12 @@ function updateMeasurementVisibility(){
   const right=new T.Vector3().setFromMatrixColumn(cam.matrixWorld,0),up=new T.Vector3().setFromMatrixColumn(cam.matrixWorld,1);
   const samples=[viewPoint.clone()];
   [-1,1].forEach(sx=>[-1,1].forEach(sy=>samples.push(viewPoint.clone().addScaledVector(right,sx*sprite.scale.x*.5).addScaledVector(up,sy*sprite.scale.y*.5))));
-  const covered=samples.some(sample=>{rayDirection.copy(sample).sub(cam.position);const length=rayDirection.length();measurementRay.set(cam.position,rayDirection.normalize());measurementRay.far=length-.04;return measurementRay.intersectObjects(measurementOccluders,false).length>0;});
+  const covered=(walking&&sprite.userData.opening?samples.slice(0,1):samples).every(sample=>{rayDirection.copy(sample).sub(cam.position);const length=rayDirection.length();measurementRay.set(cam.position,rayDirection.normalize());measurementRay.far=length-.04;return measurementRay.intersectObjects(measurementOccluders,false).some(hit=>blocksMeasurement(hit,sprite));});
   const projected=viewPoint.clone().project(cam),pixelHeight=host.clientHeight/(2*Math.tan(cam.fov*Math.PI/360)*distance),width=sprite.scale.x*pixelHeight,height=sprite.scale.y*pixelHeight;
   const x=(projected.x+1)*host.clientWidth/2,y=(1-projected.y)*host.clientHeight/2;
   const box={left:x-width/2-5,right:x+width/2+5,top:y-height/2-4,bottom:y+height/2+4};
   const overlaps=occupied.some(b=>box.left<b.right&&box.right>b.left&&box.top<b.bottom&&box.bottom>b.top);
-  sprite.visible=!covered&&!overlaps&&shown<12&&projected.z>-1&&projected.z<1&&Math.abs(projected.x)<1.05&&Math.abs(projected.y)<1.05;
+  sprite.visible=!covered&&!overlaps&&shown<(walking?6:12)&&projected.z>-1&&projected.z<1&&Math.abs(projected.x)<1.05&&Math.abs(projected.y)<1.05;
   if(sprite.visible){occupied.push(box);shown++;}
  }
 }
@@ -4772,7 +4863,7 @@ function walkTo(r){
  const x=r?r.spot[0]:2.2,y=r?r.spot[1]:-3.8;
  playerPosition.set(isMirrored?HOUSE_WIDTH-sx(x):sx(x),0,-y);yaw=r?(isMirrored?-r.angle:r.angle):0;pitch=-.045;
  updateWalkCamera();
- note.textContent='Nhân vật cao 1,65 m · mắt cao 1,54 m. W/A/S/D hoặc nút mũi tên để đi; Q/E để quay; kéo màn hình để nhìn. Đổi nhìn theo nhân vật / qua mắt và chỉnh Góc rộng để xem thoáng hơn.';
+ note.textContent='Nhân vật cao 1,65 m · mắt cao 1,54 m. W/A/S/D hoặc nút mũi tên để đi; Q/E để quay; kéo màn hình để nhìn. Đổi nhìn theo nhân vật / qua mắt và chỉnh Góc rộng để xem thoáng hơn. Bật Kích thước để xem số đo cửa, sân và lối hông.';
 }
 document.getElementById('site-view').onclick=()=>{focusOrbit('outside',[25,30,35],[HOUSE_WIDTH/2,0,-1],true);note.textContent='Sân bê tông trước nhà 15 m, cổng và rào lưới, đường hai làn. Vườn sau sâu 10 m với cây cao thấp; đất rộng 10 m, lối đi hông rộng 2 m, phía còn lại chừa 0,5 m.';};
 modes.outside.onclick=()=>focusOrbit('outside',[14,12,15],[HOUSE_WIDTH/2,1.7,-L/2],true);
